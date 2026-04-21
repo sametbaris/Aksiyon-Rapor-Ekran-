@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import io
+import re
 
 # ================= AYARLAR =================
 st.set_page_config(page_title="Fiyat Karşılaştırma Paneli", page_icon="⚖️", layout="wide")
 
-# Google Sheets ID'nizi buraya yapıştırın
-SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" 
+SHEET_ID = "BURAYA_SHEET_ID_GELECEK" # Lütfen kendi ID'ni buraya yapıştırmayı unutma!
 SHEET_NAME = "Guncel"
 
 @st.cache_data(ttl=60) 
@@ -20,30 +20,45 @@ def load_data():
     except:
         return None
 
-# ================= BRAUN SHOP BAZLI RENKLENDİRME MANTIĞI =================
+# ================= METNİ SAYIYA ÇEVİRME FİLTRESİ =================
+def parse_price(val):
+    """CSV'den gelen '1.250,00 TL' gibi metinleri saf sayıya (1250.00) çevirir."""
+    if pd.isna(val): return None
+    val_str = str(val).lower().replace("tl", "").replace("₺", "").strip()
+    
+    # Rakam, nokta ve virgül dışındaki her şeyi sil
+    clean = re.sub(r"[^\d.,]", "", val_str)
+    if not clean: return None
+    
+    # Türkçe fiyat formatını (1.250,00) İngilizce/Matematik formatına (1250.00) çevir
+    if "." in clean and "," in clean:
+        clean = clean.replace(".", "").replace(",", ".")
+    elif "," in clean:
+        clean = clean.replace(",", ".")
+        
+    try:
+        return float(clean)
+    except:
+        return None
+
+# ================= BRAUN SHOP BAZLI RENKLENDİRME =================
 def apply_comparative_style(row):
-    """
-    Braun Shop fiyatını baz alır:
-    - Eşitse: Yeşil
-    - Düşükse: Kırmızı
-    - Yüksekse: Kırmızı
-    """
-    # Karşılaştırılacak sütunlar
     target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     ref_col = "Braun Shop"
     
     styles = ['' for _ in row.index]
     
-    # Referans fiyatı sayıya çevirelim
-    ref_val = pd.to_numeric(row[ref_col], errors='coerce') if ref_col in row.index else None
+    # Braun Shop fiyatını saf rakama çevir
+    ref_val = parse_price(row[ref_col]) if ref_col in row.index else None
     
-    if pd.notnull(ref_val) and ref_val > 0:
+    if ref_val is not None and ref_val > 0:
         for col in target_cols:
             if col in row.index:
                 col_idx = row.index.get_loc(col)
-                current_val = pd.to_numeric(row[col], errors='coerce')
+                # Rakip fiyatı saf rakama çevir
+                current_val = parse_price(row[col])
                 
-                if pd.notnull(current_val):
+                if current_val is not None:
                     if current_val == ref_val:
                         # Tam eşitse YEŞİL
                         styles[col_idx] = 'background-color: #d4edda; color: #155724; font-weight: bold;'
@@ -60,7 +75,6 @@ st.info("💡 Braun Shop fiyatına eşit olanlar **Yeşil**, düşük veya yüks
 df = load_data()
 
 if df is not None:
-    # Arama Kutusu
     search = st.text_input("🔍 Listede Ara (Ürün Adı, Barkod...):")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
@@ -72,23 +86,11 @@ if df is not None:
     st.dataframe(
         styled_df,
         use_container_width=True,
-        hide_index=True,
-        # Eğer link sütunların varsa buraya ekleyebilirsin:
-        column_config={
-            "Aksiyon": st.column_config.NumberColumn(format="%.2f TL"),
-            "Braun Shop": st.column_config.NumberColumn(format="%.2f TL"),
-            "Media Markt": st.column_config.NumberColumn(format="%.2f TL"),
-            "Teknosa": st.column_config.NumberColumn(format="%.2f TL"),
-            "Vatan": st.column_config.NumberColumn(format="%.2f TL"),
-            "Trendyol": st.column_config.NumberColumn(format="%.2f TL"),
-            "Hepsiburada": st.column_config.NumberColumn(format="%.2f TL"),
-            "Amazon": st.column_config.NumberColumn(format="%.2f TL"),
-        }
+        hide_index=True
     )
 
     st.divider()
     
-    # Excel Export (Tarih ve Saatli Dosya Adı)
     now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
