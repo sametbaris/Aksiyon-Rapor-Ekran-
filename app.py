@@ -7,65 +7,58 @@ import re
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide")
 
-SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" # Kendi ID'ni yapıştır
+# Yeni ilettiğin ID'yi buraya işledim
+SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
 # ================= MODERN CSS (YUVARLAK HATLAR VE HOVER) =================
 st.markdown("""
 <style>
-    /* Tablo Konteynırı */
     .table-container {
         width: 100%;
         margin-top: 20px;
     }
     
-    /* Sabit ve Eşit Genişlikli Tablo Yapısı */
     .custom-table {
         width: 100%;
-        table-layout: fixed; /* TÜM KOLONLARI EŞİTLER */
+        table-layout: fixed; 
         border-collapse: separate;
-        border-spacing: 0 8px; /* Satırlar arası boşluk */
+        border-spacing: 0 8px;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Başlıklar */
     .custom-table th {
-        color: #999;
-        font-weight: 500;
+        color: #888;
+        font-weight: 600;
         text-transform: uppercase;
         font-size: 11px;
         letter-spacing: 1px;
         padding: 15px;
         text-align: center;
-        border: none;
     }
     
-    /* Hücreler (Normal Durum) */
     .custom-table td {
-        padding: 14px;
+        padding: 12px;
         text-align: center;
         background-color: transparent;
         color: #333;
         font-size: 14px;
-        border: 2px solid transparent; /* Gizli çerçeve */
+        border: 2px solid transparent;
         transition: all 0.2s ease-in-out;
     }
 
     /* HAP ŞEKLİNDE HOVER ETKİSİ */
     .custom-table td:hover {
-        border: 2px solid #4CAF50 !important; /* Yeşil çerçeve */
-        border-radius: 50px !important; /* Hap şekli */
+        border: 2px solid #4CAF50 !important;
+        border-radius: 50px !important;
         background-color: white !important;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-        cursor: pointer;
     }
 
-    /* Arama Kutusu Modernizasyonu */
     .stTextInput input {
         border-radius: 30px !important;
         border: 1px solid #eee !important;
         padding: 12px 25px !important;
-        background-color: #f9f9f9 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -85,8 +78,15 @@ def parse_price(val):
 def load_data():
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     try:
-        df = pd.read_csv(url).fillna("")
+        df = pd.read_csv(url)
+        # 1. Başlıkları temizle
         df.columns = [c.strip() for c in df.columns]
+        
+        # 2. SİHİRLİ DOKUNUŞ: "Unnamed" ile başlayan sütunları kaldır
+        df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
+        
+        # 3. Boş hücreleri temizle
+        df = df.fillna("")
         return df
     except: return None
 
@@ -115,23 +115,24 @@ def display_styled_table(df):
                     else:
                         style = 'background-color: #ffebee; color: #c62828; border-radius: 50px;'
             
-            html += f'<td><div style="{style}">{val if val != "nan" else ""}</div></td>'
+            # Yazı "nan" ise boş göster
+            display_val = val if val.lower() != "nan" else ""
+            html += f'<td><div style="{style}">{display_val}</div></td>'
         html += '</tr>'
     
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
 # ================= ARAYÜZ =================
-st.title("⚖️ Fiyat Analiz Merkezi")
+st.title("📊 Fiyat Analiz Merkezi")
 
 df = load_data()
 
 if df is not None:
-    search = st.text_input("🔍 Aramak istediğiniz ürünü yazın...")
+    search = st.text_input("🔍 Listede arama yapın...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-    # Modern tabloyu basıyoruz
     display_styled_table(df)
 
     # Excel İndirme
@@ -149,4 +150,4 @@ if df is not None:
         use_container_width=True
     )
 else:
-    st.error("Bağlantı hatası!")
+    st.error("Google Sheets'e ulaşılamadı. Lütfen Paylaşım Ayarlarını kontrol edin.")
