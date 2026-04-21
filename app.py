@@ -32,11 +32,8 @@ st.markdown("""
 # ================= VERİ ÇEKME FONKSİYONLARI =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
-    val_str = str(val).lower().replace("tl", "").replace("₺", "").strip()
-    clean = re.sub(r"[^\d.,]", "", val_str)
-    if not clean: return None
-    if "." in clean and "," in clean: clean = clean.replace(".", "").replace(",", ".")
-    elif "," in clean: clean = clean.replace(",", ".")
+    val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
+    clean = re.sub(r"[^\d.]", "", val_str)
     try: return float(clean)
     except: return None
 
@@ -46,8 +43,7 @@ def get_last_update():
     try:
         response = requests.get(url)
         return response.text.replace('"', '').strip()
-    except:
-        return "Bilinmiyor"
+    except: return "Bilinmiyor"
 
 @st.cache_data(ttl=60) 
 def load_data():
@@ -56,25 +52,21 @@ def load_data():
         df = pd.read_csv(url)
         df.columns = [c.strip() for c in df.columns]
 
-        # 🎯 BEYAZ LİSTE: Sadece bu kolonlar varsa gösterilecek
-        allowed_cols = ["Marka", "Ürün Adı", "Barkod", "Ürün Kodu", "Aksiyon", "Braun Shop", 
-                        "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+        # 🎯 DİNAMİK FİLTRE: 'N' kolonunu ve 'Unnamed' kolonları sil, gerisini tut.
+        # Bu sayede Barkod, Alt Grup, SKU ne varsa otomatik gelir.
+        black_list = ["N", "Pazaryeri", "Son Güncelleme"]
+        cols_to_keep = [c for c in df.columns if c not in black_list and not c.startswith("Unnamed")]
+        df = df[cols_to_keep]
         
-        # Mevcut kolonlar içinden sadece izin verdiklerimizi seç (N ve diğerleri otomatik elenir)
-        existing_allowed = [c for c in allowed_cols if c in df.columns]
-        df = df[existing_allowed]
-        
-        # "None" veya "nan" yazan hücreleri gerçek boşluğa çevir
         df = df.replace(["None", "nan", "NaN", "null"], "")
         df = df.fillna("")
-        
         return df
     except: return None
 
 # ================= RENDER MOTORU =================
 def display_styled_table(df):
-    target_cols = ["Marka", "Ürün Adı", "Barkod", "Ürün Kodu", "Aksiyon", "Braun Shop", 
-                        "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    # Kıyaslama yapılacak rakip kolonlar
+    target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for col in df.columns:
@@ -85,13 +77,11 @@ def display_styled_table(df):
         html += '<tr>'
         for col in df.columns:
             val = str(row[col])
-            # Yazı nan/none ise boşalt
             display_val = "" if val.lower() in ["nan", "none", ""] else val
-            
             inner_style = "padding: 6px 12px; display: inline-block;"
             
-            if col in target_cols:
-                ref_val = parse_price(row.get("Braun Shop", None))
+            if col in target_cols and "Braun Shop" in df.columns:
+                ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
                 if ref_val and curr_val:
                     if curr_val == ref_val:
@@ -115,7 +105,7 @@ with col_update:
 # ================= ANA İÇERİK =================
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Ürün adı veya barkod ile arama yapın...")
+    search = st.text_input("🔍 Ürün adı, barkod veya alt grup ile arama yapın...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
