@@ -7,7 +7,7 @@ import re
 # ================= AYARLAR =================
 st.set_page_config(page_title="Fiyat Karşılaştırma Paneli", page_icon="⚖️", layout="wide")
 
-SHEET_ID = "BURAYA_SHEET_ID_GELECEK" # Lütfen kendi ID'ni buraya yapıştırmayı unutma!
+SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" # Lütfen kendi ID'ni buraya yapıştırmayı unutma!
 SHEET_NAME = "Guncel"
 
 @st.cache_data(ttl=60) 
