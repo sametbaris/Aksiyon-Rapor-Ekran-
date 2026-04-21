@@ -11,39 +11,65 @@ st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide"
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
-# ================= ULTRA MODERN CSS =================
+# ================= SMART DARK MODE CSS =================
 st.markdown("""
 <style>
+    /* CSS Değişkenleri - Temaya göre renkleri otomatik yönetir */
+    :root {
+        --text-main: inherit;
+        --header-color: #888;
+        --hover-bg: rgba(128, 128, 128, 0.1);
+        --pill-default-bg: rgba(128, 128, 128, 0.1);
+    }
+
     .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 10px; font-family: 'Inter', sans-serif; border: none; }
-    .custom-table th { color: #aaa; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 10px 20px; text-align: left; border: none; }
-    .custom-table td { padding: 8px 20px; text-align: left; border: none; white-space: nowrap; }
+    
+    .custom-table th { 
+        color: var(--header-color); 
+        font-weight: 500; 
+        text-transform: uppercase; 
+        font-size: 11px; 
+        letter-spacing: 1.5px; 
+        padding: 10px 20px; 
+        text-align: left; 
+    }
+
+    .custom-table td { 
+        padding: 8px 20px; 
+        text-align: left; 
+        border: none; 
+        white-space: nowrap; 
+        color: var(--text-main); /* Streamlit'in kendi yazı rengini miras alır */
+    }
 
     .data-pill {
         padding: 6px 14px;
         display: inline-block;
         border-radius: 20px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent;
     }
 
+    /* Hover sırasında her iki temada da şık duran gölge ve büyüme */
     .data-pill:hover {
         transform: scale(1.1);
-        box-shadow: 0px 6px 15px rgba(0,0,0,0.08);
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.2);
         cursor: pointer;
         z-index: 10;
+        background-color: var(--hover-bg);
     }
 
     .update-badge {
-        text-align: right; color: #7f8c8d; font-size: 12px;
-        background: #f8f9fa; padding: 6px 16px; border-radius: 30px;
-        display: inline-block; float: right; border: 1px solid #eee;
+        text-align: right; color: var(--header-color); font-size: 12px;
+        background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px;
+        display: inline-block; float: right; border: 1px solid rgba(128, 128, 128, 0.2);
     }
-    .stTextInput input { border-radius: 50px !important; padding: 12px 25px !important; }
+
+    .stTextInput input { border-radius: 50px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= FONKSİYONLAR =================
+# ================= YARDIMCI FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
@@ -90,24 +116,26 @@ def display_styled_table(df):
             
             pill_style = ""
             
-            # 1. Renklendirme Mantığı (Pazaryerleri)
+            # 1. Renklendirme Mantığı (Yeşil/Kırmızı Haplar)
+            # Metin renklerini koyu temada da okunması için net seçtik
             if col in target_cols and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
                 if ref_val and curr_val:
                     if curr_val == ref_val:
-                        pill_style = 'background-color: #e8f5e9; color: #2e7d32; font-weight: 600;'
+                        # Soft Yeşil Arka Plan + Koyu Yeşil Yazı
+                        pill_style = 'background-color: #d4edda; color: #155724; font-weight: 600;'
                     else:
-                        pill_style = 'background-color: #ffebee; color: #c62828; font-weight: 600;'
+                        # Soft Kırmızı Arka Plan + Koyu Kırmızı Yazı
+                        pill_style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;'
             
-            # 2. Teknik kolonlar için ŞEFFAFLIK FİLTRESİ
+            # 2. Teknik kolonlar için (Barkod, Grup, Marka vb.) - Arka plansız
             if not pill_style and display_val != "":
-                # İsim eşleşmesi için daha geniş bir kontrol (Barkod, Kodu veya Grup geçiyorsa)
                 if any(x in col_lower for x in ["barkod", "kodu", "grup", "marka"]):
-                    pill_style = 'background-color: transparent; color: #333;'
+                    pill_style = 'background-color: transparent;'
                 else:
-                    # Diğerleri (Ürün Adı vb.) için hafif gri hap
-                    pill_style = 'background-color: #f8f9fa; color: #333;'
+                    # Ürün adı gibi diğerleri için temaya uyumlu çok hafif vurgu
+                    pill_style = 'background-color: var(--pill-default-bg);'
 
             html += f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
         html += '</tr>'
@@ -124,13 +152,12 @@ with col_update:
 
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Listede arama yapın...")
+    search = st.text_input("🔍 Hızlı arama...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
     display_styled_table(df)
 
-    # Excel İndirme
     now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -138,9 +165,9 @@ if df is not None:
     
     st.write("<br>", unsafe_allow_html=True)
     st.download_button(
-        label="📥 Güncel Verileri Excel'e Aktar",
+        label="📥 Excel Olarak İndir",
         data=output.getvalue(),
-        file_name=f"Fiyat_Raporu_{now}.xlsx",
+        file_name=f"Rapor_{now}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
