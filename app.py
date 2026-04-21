@@ -49,11 +49,9 @@ st.markdown("""
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_id(val):
-    """Hücredeki değeri temizler, .0 ekini siler, nan değerleri boş döner."""
-    if pd.isna(val): return ""
-    v = str(val).strip().lower()
-    if v in ["nan", "none", ""]: return ""
-    # Sayısal bir değerse (örn: 1282.0) noktadan sonrasını at
+    """Pandas'ın sayıların sonuna eklediği .0 hatasını temizler."""
+    if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
+    v = str(val).strip()
     return v.split('.')[0]
 
 def parse_price(val):
@@ -63,24 +61,21 @@ def parse_price(val):
     try: return float(clean)
     except: return None
 
-# ================= AKILLI LİNK MOTORU (HASSAS AYAR) =================
+# ================= LOKAL BOT MANTIĞIYLA LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
-    # Mapping dosyasındaki ID/Link bilgisini temizle
     val = clean_id(raw_id)
-    # Eğer hücre zaten tam bir link (http) içeriyorsa direkt onu kullan
-    if val.startswith("http"):
-        return val
+    if val.startswith("http"): return val
     
     barcode = clean_id(row.get("Barkod_Int", ""))
 
-    # ID boşsa bazı mağazalar için barkod araması üret (Lokal kodundaki mantık)
+    # Veri yoksa Barkod araması (MediaMarkt, Teknosa, Vatan için)
     if val == "":
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}" if barcode else None
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}" if barcode else None
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/" if barcode else None
         return None
 
-    # ID varsa, ilgili platformun link yapısını oluştur
+    # ID üzerinden link inşası
     if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
     if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
     if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
@@ -94,24 +89,23 @@ def build_smart_link(label, raw_id, row):
 def load_and_merge_data():
     fiyat_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Guncel&range=A:M"
     try:
-        # Fiyatları string olarak oku
+        # Fiyatları her zaman string oku (.0 hatası için)
         df_fiyat = pd.read_csv(fiyat_url, dtype=str)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # Fiyat barkod sütunu
+        # Fiyat barkodunu temizle
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_id)
 
         if os.path.exists(MAPPING_FILE):
-            # Mapping dosyasını string olarak oku (.0 oluşumunu engeller)
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
             
-            # Mapping barkod sütunu
+            # Mapping barkodunu temizle
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
             df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_id)
             
-            # Lokal kodundaki sütun isimleri
+            # Link ID sütunları
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             
@@ -125,25 +119,23 @@ def load_and_merge_data():
 
 # ================= RENDER =================
 def display_styled_table(df):
-    # Kolonları ismen bul (Kayıp sütunları engellemek için)
     def find_col(name_part):
         for c in df.columns:
             if name_part.lower() in c.lower(): return c
         return None
 
+    # Hatalı olan 'find_actual' düzeltildi, hepsi 'find_col' oldu
     mapping = {
         "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
         "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu"),
         "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
         "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
         "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
-        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_actual("Hepsiburada"), # find_actual fix
+        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
         "Amazon": find_col("Amazon")
     }
-    # Hepsiburada için küçük bir düzeltme
-    if not mapping["Hepsiburada"]: mapping["Hepsiburada"] = find_col("Hepsi")
 
-    # Mapping referansları
+    # Hangi pazar hangi mapping kolonuna bakacak?
     refs = {
         "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM",
         "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"
@@ -164,10 +156,10 @@ def display_styled_table(df):
             d_val = "" if val.lower() in ["nan", "none", ""] else val
             style = ""
             
-            # Fiyat Kıyaslama
-            bs_col = mapping["Braun Shop"]
-            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col:
-                p_ref = parse_price(row[bs_col])
+            # Fiyat Kıyaslama (Braun Shop sütunu varsa)
+            bs_col_name = mapping.get("Braun Shop")
+            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
+                p_ref = parse_price(row[bs_col_name])
                 p_curr = parse_price(d_val)
                 if p_ref and p_curr:
                     if p_curr == p_ref: style = 'background-color: #d4edda; color: #155724; font-weight: 600;'
@@ -177,9 +169,10 @@ def display_styled_table(df):
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
 
-            # --- LİNK OLUŞTURMA ---
-            m_col = refs.get(label)
-            url = build_smart_link(label, row.get(m_col, ""), row)
+            # --- LİNK MOTORU ÇALIŞTIR ---
+            map_col = refs.get(label)
+            target_id = row.get(map_col, "")
+            url = build_smart_link(label, target_id, row)
 
             if url and d_val:
                 html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
@@ -189,7 +182,7 @@ def display_styled_table(df):
     
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
-# ================= MAIN =================
+# ================= ANA AKIŞ =================
 st.title("📊 Fiyat Analiz Merkezi")
 df_data = load_and_merge_data()
 if df_data is not None:
