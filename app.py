@@ -11,28 +11,82 @@ st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide"
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
-# ================= MODERN CSS =================
+# ================= ULTRA MODERN CSS =================
 st.markdown("""
 <style>
-    .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
-    .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 4px; font-family: 'Inter', sans-serif; }
-    .custom-table th { color: #888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding: 15px 20px; text-align: left; white-space: nowrap; }
-    .custom-table td { padding: 12px 20px; text-align: left; color: #333; font-size: 14px; white-space: nowrap; transition: background-color 0.2s ease; }
-    .custom-table tr:hover td { background-color: #f8f9fa !important; }
-    
-    .update-badge {
-        text-align: right; color: #666; font-size: 13px; font-weight: 500;
-        background: #f1f3f4; padding: 8px 18px; border-radius: 20px;
-        display: inline-block; float: right; border: 1px solid #e0e0e0;
+    /* Tablo Konteynırı */
+    .table-container { 
+        width: 100%; 
+        margin-top: 20px; 
+        overflow-x: auto; 
     }
-    .stTextInput input { border-radius: 12px !important; border: 1px solid #eee !important; }
+    
+    /* Izgarasız Tablo Yapısı */
+    .custom-table { 
+        width: 100%; 
+        table-layout: auto; 
+        border-collapse: separate; 
+        border-spacing: 0 10px; /* Satırlar arası dikey boşluk */
+        font-family: 'Inter', sans-serif;
+        border: none;
+    }
+    
+    /* Başlık Stili */
+    .custom-table th { 
+        color: #aaa; 
+        font-weight: 500; 
+        text-transform: uppercase; 
+        font-size: 11px; 
+        letter-spacing: 1.5px; 
+        padding: 10px 20px; 
+        text-align: left; 
+        border: none;
+    }
+    
+    /* Hücrelerin Temel Hali */
+    .custom-table td { 
+        padding: 12px 20px; 
+        text-align: left; 
+        color: #2c3e50; 
+        font-size: 14px; 
+        background-color: transparent;
+        border: none;
+        white-space: nowrap;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Yumuşak geçiş animasyonu */
+    }
+
+    /* HOVER EFEKTİ: HAFİF BÜYÜYEN HAP TASARIMI */
+    .custom-table td:hover {
+        background-color: #ffffff !important;
+        border-radius: 50px !important; /* Hap şekli */
+        box-shadow: 0px 10px 20px rgba(0,0,0,0.08); /* Hafif gölge */
+        transform: scale(1.05); /* %5 oranında büyüme */
+        z-index: 10;
+        position: relative;
+        cursor: pointer;
+        color: #000;
+    }
+
+    /* Sağ Üst Badge */
+    .update-badge {
+        text-align: right; color: #7f8c8d; font-size: 12px;
+        background: #f8f9fa; padding: 6px 16px; border-radius: 30px;
+        display: inline-block; float: right; border: 1px solid #eee;
+    }
+
+    /* Arama Kutusu */
+    .stTextInput input {
+        border-radius: 50px !important;
+        border: 1px solid #f0f0f0 !important;
+        padding: 12px 25px !important;
+        background-color: #fdfdfd !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= VERİ ÇEKME FONKSİYONLARI =================
+# ================= YARDIMCI FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
-    # Sayısal olmayan karakterleri temizle ama kuruş ayrımını koru
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
     clean = re.sub(r"[^\d.]", "", val_str)
     try: return float(clean)
@@ -40,7 +94,6 @@ def parse_price(val):
 
 @st.cache_data(ttl=60)
 def get_last_update():
-    # N1 hücresini her zaman ayrı çekiyoruz
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1"
     try:
         response = requests.get(url)
@@ -49,20 +102,16 @@ def get_last_update():
 
 @st.cache_data(ttl=60) 
 def load_data():
-    # 🎯 KESİN ÇÖZÜM: Sadece A:M aralığını çekiyoruz (13 Sütun)
+    # A:M aralığı ile N kolonunu fiziksel olarak engelliyoruz
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&range=A:M"
     try:
         df = pd.read_csv(url)
         df.columns = [c.strip() for c in df.columns]
-
-        # İsmi 'Unnamed' olan veya tamamen boş gelen kolonları yine de temizleyelim
         df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
         
-        # 'Pazaryeri' veya 'Son Güncelleme' kazara A-M arasındaysa onları da çıkaralım
         blacklist = ["Pazaryeri", "Son Güncelleme"]
         df = df.drop(columns=[c for c in blacklist if c in df.columns])
         
-        df = df.replace(["None", "nan", "NaN", "null"], "")
         df = df.fillna("")
         return df
     except: return None
@@ -81,9 +130,10 @@ def display_styled_table(df):
         for col in df.columns:
             val = str(row[col])
             display_val = "" if val.lower() in ["nan", "none", ""] else val
-            inner_style = "padding: 6px 12px; display: inline-block;"
             
-            # Braun Shop Kıyaslama Mantığı
+            # İçerik Stili (Sadece yeşil/kırmızı haplar için)
+            inner_style = "padding: 6px 14px; display: inline-block;"
+            
             if col in target_cols and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
@@ -99,22 +149,22 @@ def display_styled_table(df):
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
-# ================= ÜST PANEL =================
+# ================= ARAYÜZ =================
 col_title, col_update = st.columns([2, 1])
 with col_title: st.title("📊 Fiyat Analiz Merkezi")
 with col_update:
     last_update = get_last_update()
     st.markdown(f'<div class="update-badge">🔄 Son Güncelleme: {last_update}</div>', unsafe_allow_html=True)
 
-# ================= ANA İÇERİK =================
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Ürün adı, barkod veya SKU ile hızlı arama...")
+    search = st.text_input("🔍 Listede arama yapın...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
     display_styled_table(df)
 
+    # Excel İndirme Alanı
     now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -129,4 +179,4 @@ if df is not None:
         use_container_width=True
     )
 else:
-    st.error("Veri yüklenemedi. Lütfen Google Sheets bağlantısını kontrol edin.")
+    st.error("Bağlantı hatası.")
