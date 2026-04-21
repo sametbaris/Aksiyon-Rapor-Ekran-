@@ -13,48 +13,64 @@ st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide"
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
-# ================= LOGO YÜKLEME FONKSİYONU =================
-def get_base64_logo(file_path):
+# ================= LOGO YÜKLEME SİHRİBAZI =================
+def get_base64_logo(file_name):
+    """Logos klasöründeki resimleri base64 formatına çevirir."""
+    # Dosya yolunu oluştur (Klasör adının 'logos' olduğundan emin ol)
+    file_path = os.path.join("logos", file_name)
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             data = f.read()
         return f"data:image/png;base64,{base64.b64encode(data).decode()}"
     return None
 
-# Kendi yüklediğin logoların yolları (logos klasörü içinde olduğunu varsayıyoruz)
+# Sütun isimlerini dosya isimleriyle eşleştiriyoruz
+# Not: Resim dosyalarının isimleri tam olarak buradakilerle (küçük harf) aynı olmalı.
 LOGOS = {
-    "Media Markt": get_base64_logo("logos/mediamarkt.png"),
-    "Teknosa": get_base64_logo("logos/teknosa.png"),
-    "Vatan": get_base64_logo("logos/vatan.png"),
-    "Trendyol": get_base64_logo("logos/trendyol.png"),
-    "Hepsiburada": get_base64_logo("logos/hepsiburada.png"),
-    "Amazon": get_base64_logo("logos/amazon.png"),
-    "Braun Shop": get_base64_logo("logos/braunshop.png")
+    "Media Markt": get_base64_logo("mediamarkt.png"),
+    "Teknosa": get_base64_logo("teknosa.png"),
+    "Vatan": get_base64_logo("vatan.png"),
+    "Trendyol": get_base64_logo("trendyol.png"),
+    "Hepsiburada": get_base64_logo("hepsiburada.png"),
+    "Amazon": get_base64_logo("amazon.png"),
+    "Braun Shop": get_base64_logo("braunshop.png")
 }
 
-# ================= SMART CSS =================
+# ================= SMART DARK/LIGHT CSS =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 10px; font-family: 'Inter', sans-serif; border: none; }
     
-    /* Logo Başlık Stili - Boyutu buradan ayarlayabilirsin */
-    .header-logo { height: 25px; width: auto; object-fit: contain; }
+    /* Logo Boyutu ve Zarifliği */
+    .header-logo { 
+        height: 28px; 
+        width: auto; 
+        max-width: 120px; 
+        object-fit: contain; 
+        filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1));
+    }
     
     .custom-table th { 
         color: var(--header-color); font-weight: 500; text-transform: uppercase; 
         font-size: 11px; letter-spacing: 1.5px; padding: 10px 20px; text-align: center; 
     }
     .custom-table td { padding: 8px 20px; text-align: center; border: none; white-space: nowrap; }
+    
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     .data-pill:hover { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
-    .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; border: 1px solid rgba(128, 128, 128, 0.2); }
+    
+    .update-badge { 
+        text-align: right; color: var(--header-color); font-size: 12px; 
+        background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; 
+        display: inline-block; float: right; border: 1px solid rgba(128, 128, 128, 0.1); 
+    }
     .stTextInput input { border-radius: 50px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= VERİ VE RENDER =================
+# ================= YARDIMCI FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
@@ -83,14 +99,15 @@ def load_data():
         return df
     except: return None
 
+# ================= RENDER MOTORU =================
 def display_styled_table(df):
     target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     
     for col in df.columns:
-        logo_url = LOGOS.get(col)
-        if logo_url:
-            html += f'<th><img src="{logo_url}" class="header-logo" title="{col}"></th>'
+        logo_data = LOGOS.get(col)
+        if logo_data:
+            html += f'<th><img src="{logo_data}" class="header-logo" title="{col}"></th>'
         else:
             html += f'<th>{col}</th>'
     
@@ -116,7 +133,7 @@ def display_styled_table(df):
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
-# ================= ÜST PANEL VE ANA AKIŞ =================
+# ================= ÜST PANEL VE AKIŞ =================
 col_title, col_update = st.columns([2, 1])
 with col_title: st.title("📊 Fiyat Analiz Merkezi")
 with col_update:
@@ -125,7 +142,7 @@ with col_update:
 
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Hızlı arama...")
+    search = st.text_input("🔍 Hızlı arama (Ürün, Barkod, SKU)...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     display_styled_table(df)
@@ -135,4 +152,4 @@ if df is not None:
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False)
     st.write("<br>", unsafe_allow_html=True)
-    st.download_button(label="📥 Excel İndir", data=output.getvalue(), file_name=f"Rapor_{now}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    st.download_button(label="📥 Verileri Excel Olarak İndir", data=output.getvalue(), file_name=f"Rapor_{now}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
