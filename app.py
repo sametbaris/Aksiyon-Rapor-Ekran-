@@ -8,7 +8,7 @@ import io
 st.set_page_config(page_title="Pazaryeri Fiyat Raporu", page_icon="📊", layout="wide")
 
 # Buraya kendi Google Sheets ID'ni yapıştır
-SHEET_ID = "https://docs.google.com/spreadsheets/d/1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0/edit?usp=sharing" 
+SHEET_ID = "Aksiyon_Guncel_Test" 
 SHEET_NAME = "Guncel"
 # ===========================================
 
