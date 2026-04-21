@@ -4,74 +4,94 @@ from datetime import datetime
 import io
 
 # ================= AYARLAR =================
-# Sayfa tasarımını minimal ve geniş yapmak için:
-st.set_page_config(page_title="Pazaryeri Fiyat Raporu", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Fiyat Analiz Paneli", page_icon="📈", layout="wide")
 
-# Buraya kendi Google Sheets ID'ni yapıştır
-SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
+# Google Sheets ID'niz (Kendi ID'nizi buraya yapıştırın)
+SHEET_ID = "1a2b3c4d5e6f7g8h9i0j_ABCDEFG" 
 SHEET_NAME = "Guncel"
-# ===========================================
 
-# Veriyi Google Sheets'ten çeken fonksiyon
-@st.cache_data(ttl=300) # Veriyi 5 dakikada bir yeniler (Sunucuyu yormaz)
+# Veriyi çeken fonksiyon
+@st.cache_data(ttl=60) 
 def load_data():
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     try:
         df = pd.read_csv(url)
+        # Sütun isimlerindeki boşlukları temizleyelim
+        df.columns = [c.strip() for c in df.columns]
         return df
-    except Exception as e:
+    except:
         return None
 
-# Excel indirme butonunu hazırlayan fonksiyon
-def to_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Fiyatlar')
-    return output.getvalue()
+# ================= RENKLENDİRME MANTIĞI (STYLING) =================
+def highlight_min_prices(row):
+    """
+    Her satırdaki fiyat sütunlarını karşılaştırır ve en ucuz olanı yeşil yapar.
+    """
+    # Karşılaştırılacak fiyat sütunları
+    price_cols = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    
+    # Sadece tabloda var olan sütunları seçelim
+    valid_cols = [c for c in price_cols if c in row.index]
+    
+    # Değerleri sayıya çevirelim (Hata almamak için)
+    numeric_values = pd.to_numeric(row[valid_cols], errors='coerce')
+    min_val = numeric_values.min()
+    
+    styles = ['' for _ in row.index]
+    for col in valid_cols:
+        col_idx = row.index.get_loc(col)
+        val = pd.to_numeric(row[col], errors='coerce')
+        if pd.notnull(val) and val == min_val and min_val > 0:
+            styles[col_idx] = 'background-color: #d4edda; color: #155724; font-weight: bold' # Soft Yeşil
+    return styles
 
-# ================= ARAYÜZ (UI) =================
-st.title("📊 Aksiyon ve Pazaryeri Fiyat Raporu")
-st.markdown("Bu ekranda, güncel pazaryeri fiyatlarını minimal bir tasarımla inceleyebilir ve filtreleyebilirsiniz.")
+# ================= ARAYÜZ =================
+st.title("📈 Stratejik Fiyat Takip Paneli")
 
 df = load_data()
 
 if df is not None:
-    # Google Sheets'te "Son Güncelleme" bilgisini yazdığımız hücreyi (N1) bulup arayüze ekleyelim
-    # (Eğer tablonda N sütunu yoksa veya farklıysa burayı silebilirsin)
-    son_guncelleme = "Bilinmiyor"
-    if "Son Güncelleme" in df.columns: # Eğer başlık olarak aldıysa
-        st.caption(f"🔄 **{df.columns[-1]}**") 
-    
-    st.divider() # Şık bir ayraç çizgisi
+    # Arama motoru
+    search = st.text_input("🔍 Ürün Ara (Barkod, İsim vb.):")
+    if search:
+        df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-    # 1. Filtreleme Alanı (Arama)
-    search_query = st.text_input("🔍 Ürün Barkodu veya Kodu ile Arama Yapın:")
+    # Renklendirmeyi uygula
+    styled_df = df.style.apply(highlight_min_prices, axis=1)
+
+    # Link ve Sütun Yapılandırması
+    # Not: CSV ile linkler doğrudan gelmediği için, eğer link sütunların varsa
+    # onları LinkColumn olarak tanımlayabiliriz. 
+    # Eğer linkler hücrenin içindeyse, Excel formatında çekmemiz gerekir.
     
-    if search_query:
-        # Arama kutusuna bir şey yazılırsa, df'i o kelimeye göre filtrele
-        mask = df.apply(lambda row: row.astype(str).str.contains(search_query, case=False, na=False).any(), axis=1)
-        df_filtered = df[mask]
-    else:
-        df_filtered = df
-        
-    # 2. Veri Tablosunu Gösterme
-    # Streamlit'in kendi süper hızlı dataframe özelliği:
-    st.dataframe(df_filtered, use_container_width=True, hide_index=True)
-    
+    st.dataframe(
+        styled_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Aksiyon": st.column_config.NumberColumn(format="%.2f TL"),
+            "Braun Shop": st.column_config.NumberColumn(format="%.2f TL"),
+            "Trendyol": st.column_config.NumberColumn(format="%.2f TL"),
+            "Hepsiburada": st.column_config.NumberColumn(format="%.2f TL"),
+            "Amazon": st.column_config.NumberColumn(format="%.2f TL"),
+            # Eğer ürün linklerini içeren bir sütun eklemek istersen:
+            # "Ürün Linki": st.column_config.LinkColumn("Git"),
+        }
+    )
+
     st.divider()
     
-    # 3. Dinamik Tarihli Excel İndirme Butonu
-    now_str = datetime.now().strftime("%d.%m.%Y_%H-%M")
-    excel_data = to_excel(df_filtered)
+    # Excel Export
+    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
     
-    col1, col2, col3 = st.columns([1,2,1]) # Butonu ortalamak için
-    with col2:
-        st.download_button(
-            label="📥 Güncel Tabloyu Excel Olarak İndir",
-            data=excel_data,
-            file_name=f"Fiyat_Raporu_{now_str}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+    st.download_button(
+        label="📥 Verileri Excel Olarak İndir",
+        data=output.getvalue(),
+        file_name=f"Fiyat_Analizi_{now}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 else:
-    st.error("⚠️ Veriler Google Sheets'ten çekilemedi. Dosya ID'sini veya paylaşım ayarlarını kontrol edin.")
+    st.warning("Veri yüklenemedi. Lütfen Google Sheets ID ve Paylaşım ayarlarını kontrol edin.")
