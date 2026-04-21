@@ -27,17 +27,18 @@ st.markdown("""
         font-size: 13px;
         font-weight: 500;
         background: #f1f3f4;
-        padding: 8px 15px;
+        padding: 8px 18px;
         border-radius: 20px;
         display: inline-block;
         float: right;
+        border: 1px solid #e0e0e0;
     }
     
-    .stTextInput input { border-radius: 12px !important; }
+    .stTextInput input { border-radius: 12px !important; border: 1px solid #eee !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= VERİ DEDEKTİFİ (N1 VE TABLO ÇEKME) =================
+# ================= VERİ ÇEKME FONKSİYONLARI =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() == "nan": return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").strip()
@@ -65,12 +66,16 @@ def load_data():
         df = pd.read_csv(url)
         df.columns = [c.strip() for c in df.columns]
         
-        # 1. 'Pazaryeri' kolonunu kaldır
-        if "Pazaryeri" in df.columns:
-            df = df.drop(columns=["Pazaryeri"])
+        # 1. İstenmeyen kolonları (Pazaryeri, N, Son Güncelleme vb.) kaldır
+        unwanted_cols = ["Pazaryeri", "N", "Son Güncelleme"]
+        # Tabloda var olanları listele ve sil
+        cols_to_drop = [c for c in unwanted_cols if c in df.columns]
+        if cols_to_drop:
+            df = df.drop(columns=cols_to_drop)
             
-        # 2. Unnamed ve boş sütunları temizle
+        # 2. Unnamed (isimsiz) ve tamamen boş sütunları temizle
         df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
+        
         df = df.fillna("")
         return df
     except: return None
@@ -106,7 +111,7 @@ def display_styled_table(df):
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
-# ================= ÜST PANEL (BAŞLIK VE GÜNCELLEME) =================
+# ================= ÜST PANEL =================
 col_title, col_update = st.columns([2, 1])
 
 with col_title:
@@ -120,7 +125,7 @@ with col_update:
 df = load_data()
 
 if df is not None:
-    search = st.text_input("🔍 Listede arama yapın...")
+    search = st.text_input("🔍 Ürün adı veya barkod ile arama yapın...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
@@ -141,4 +146,4 @@ if df is not None:
         use_container_width=True
     )
 else:
-    st.error("Veri yüklenemedi.")
+    st.error("Veriler yüklenemedi. Google Sheets bağlantısını ve paylaşım ayarlarını kontrol edin.")
