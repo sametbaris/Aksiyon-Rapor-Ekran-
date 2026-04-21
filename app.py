@@ -20,27 +20,18 @@ st.markdown("""
     .custom-table td { padding: 12px 20px; text-align: left; color: #333; font-size: 14px; white-space: nowrap; transition: background-color 0.2s ease; }
     .custom-table tr:hover td { background-color: #f8f9fa !important; }
     
-    /* Sağ Üst Güncelleme Kutusu */
     .update-badge {
-        text-align: right;
-        color: #666;
-        font-size: 13px;
-        font-weight: 500;
-        background: #f1f3f4;
-        padding: 8px 18px;
-        border-radius: 20px;
-        display: inline-block;
-        float: right;
-        border: 1px solid #e0e0e0;
+        text-align: right; color: #666; font-size: 13px; font-weight: 500;
+        background: #f1f3f4; padding: 8px 18px; border-radius: 20px;
+        display: inline-block; float: right; border: 1px solid #e0e0e0;
     }
-    
     .stTextInput input { border-radius: 12px !important; border: 1px solid #eee !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ================= VERİ ÇEKME FONKSİYONLARI =================
 def parse_price(val):
-    if not val or pd.isna(val) or str(val).lower() == "nan": return None
+    if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").strip()
     clean = re.sub(r"[^\d.,]", "", val_str)
     if not clean: return None
@@ -51,7 +42,6 @@ def parse_price(val):
 
 @st.cache_data(ttl=60)
 def get_last_update():
-    """N1 hücresindeki veriyi tek başına çeker."""
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1"
     try:
         response = requests.get(url)
@@ -65,18 +55,19 @@ def load_data():
     try:
         df = pd.read_csv(url)
         df.columns = [c.strip() for c in df.columns]
+
+        # 🎯 BEYAZ LİSTE: Sadece bu kolonlar varsa gösterilecek
+        allowed_cols = ["Marka", "Ürün Adı", "Barkod", "Ürün Kodu", "Aksiyon", "Braun Shop", 
+                        "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
         
-        # 1. İstenmeyen kolonları (Pazaryeri, N, Son Güncelleme vb.) kaldır
-        unwanted_cols = ["Pazaryeri", "N", "Son Güncelleme"]
-        # Tabloda var olanları listele ve sil
-        cols_to_drop = [c for c in unwanted_cols if c in df.columns]
-        if cols_to_drop:
-            df = df.drop(columns=cols_to_drop)
-            
-        # 2. Unnamed (isimsiz) ve tamamen boş sütunları temizle
-        df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
+        # Mevcut kolonlar içinden sadece izin verdiklerimizi seç (N ve diğerleri otomatik elenir)
+        existing_allowed = [c for c in allowed_cols if c in df.columns]
+        df = df[existing_allowed]
         
+        # "None" veya "nan" yazan hücreleri gerçek boşluğa çevir
+        df = df.replace(["None", "nan", "NaN", "null"], "")
         df = df.fillna("")
+        
         return df
     except: return None
 
@@ -93,18 +84,20 @@ def display_styled_table(df):
         html += '<tr>'
         for col in df.columns:
             val = str(row[col])
+            # Yazı nan/none ise boşalt
+            display_val = "" if val.lower() in ["nan", "none", ""] else val
+            
             inner_style = "padding: 6px 12px; display: inline-block;"
             
             if col in target_cols:
-                ref_val = parse_price(row["Braun Shop"])
-                curr_val = parse_price(val)
+                ref_val = parse_price(row.get("Braun Shop", None))
+                curr_val = parse_price(display_val)
                 if ref_val and curr_val:
                     if curr_val == ref_val:
                         inner_style += 'background-color: #e8f5e9; color: #2e7d32; border-radius: 20px; font-weight: 600;'
                     else:
                         inner_style += 'background-color: #ffebee; color: #c62828; border-radius: 20px; font-weight: 600;'
             
-            display_val = val if val.lower() != "nan" else ""
             html += f'<td><span style="{inner_style}">{display_val}</span></td>'
         html += '</tr>'
     
@@ -113,17 +106,13 @@ def display_styled_table(df):
 
 # ================= ÜST PANEL =================
 col_title, col_update = st.columns([2, 1])
-
-with col_title:
-    st.title("📊 Fiyat Analiz Merkezi")
-
+with col_title: st.title("📊 Fiyat Analiz Merkezi")
 with col_update:
     last_update = get_last_update()
     st.markdown(f'<div class="update-badge">🔄 Son Güncelleme: {last_update}</div>', unsafe_allow_html=True)
 
 # ================= ANA İÇERİK =================
 df = load_data()
-
 if df is not None:
     search = st.text_input("🔍 Ürün adı veya barkod ile arama yapın...")
     if search:
@@ -131,7 +120,6 @@ if df is not None:
 
     display_styled_table(df)
 
-    # Excel İndirme
     now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -146,4 +134,4 @@ if df is not None:
         use_container_width=True
     )
 else:
-    st.error("Veriler yüklenemedi. Google Sheets bağlantısını ve paylaşım ayarlarını kontrol edin.")
+    st.error("Veriler yüklenemedi.")
