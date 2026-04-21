@@ -11,80 +11,42 @@ st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide"
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
-# ================= ULTRA MODERN CSS =================
+# ================= ULTRA MODERN CSS (HAP ODAKLI) =================
 st.markdown("""
 <style>
-    /* Tablo Konteynırı */
-    .table-container { 
-        width: 100%; 
-        margin-top: 20px; 
-        overflow-x: auto; 
-    }
-    
-    /* Izgarasız Tablo Yapısı */
-    .custom-table { 
-        width: 100%; 
-        table-layout: auto; 
-        border-collapse: separate; 
-        border-spacing: 0 10px; /* Satırlar arası dikey boşluk */
-        font-family: 'Inter', sans-serif;
-        border: none;
-    }
-    
-    /* Başlık Stili */
-    .custom-table th { 
-        color: #aaa; 
-        font-weight: 500; 
-        text-transform: uppercase; 
-        font-size: 11px; 
-        letter-spacing: 1.5px; 
-        padding: 10px 20px; 
-        text-align: left; 
-        border: none;
-    }
-    
-    /* Hücrelerin Temel Hali */
-    .custom-table td { 
-        padding: 12px 20px; 
-        text-align: left; 
-        color: #2c3e50; 
-        font-size: 14px; 
-        background-color: transparent;
-        border: none;
-        white-space: nowrap;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Yumuşak geçiş animasyonu */
+    .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
+    .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 10px; font-family: 'Inter', sans-serif; border: none; }
+    .custom-table th { color: #aaa; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 10px 20px; text-align: left; border: none; }
+    .custom-table td { padding: 8px 20px; text-align: left; border: none; white-space: nowrap; }
+
+    /* HÜCRE İÇİNDEKİ HAP (SPAN) TASARIMI */
+    .data-pill {
+        padding: 6px 14px;
+        display: inline-block;
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent; /* Normalde görünmez çerçeve */
     }
 
-    /* HOVER EFEKTİ: HAFİF BÜYÜYEN HAP TASARIMI */
-    .custom-table td:hover {
-        background-color: #ffffff !important;
-        border-radius: 50px !important; /* Hap şekli */
-        box-shadow: 0px 10px 20px rgba(0,0,0,0.08); /* Hafif gölge */
-        transform: scale(1.05); /* %5 oranında büyüme */
-        z-index: 10;
-        position: relative;
+    /* SADECE HAP ÜZERİNE GELİNDİĞİNDE TETİKLENEN EFEKT */
+    .data-pill:hover {
+        transform: scale(1.1); /* Sadece hap %10 büyür */
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.1);
         cursor: pointer;
-        color: #000;
+        filter: brightness(0.95); /* Hafif belirginleşme */
+        z-index: 10;
     }
 
-    /* Sağ Üst Badge */
     .update-badge {
         text-align: right; color: #7f8c8d; font-size: 12px;
         background: #f8f9fa; padding: 6px 16px; border-radius: 30px;
         display: inline-block; float: right; border: 1px solid #eee;
     }
-
-    /* Arama Kutusu */
-    .stTextInput input {
-        border-radius: 50px !important;
-        border: 1px solid #f0f0f0 !important;
-        padding: 12px 25px !important;
-        background-color: #fdfdfd !important;
-    }
+    .stTextInput input { border-radius: 50px !important; padding: 12px 25px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= YARDIMCI FONKSİYONLAR =================
+# ================= FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
@@ -102,16 +64,13 @@ def get_last_update():
 
 @st.cache_data(ttl=60) 
 def load_data():
-    # A:M aralığı ile N kolonunu fiziksel olarak engelliyoruz
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&range=A:M"
     try:
         df = pd.read_csv(url)
         df.columns = [c.strip() for c in df.columns]
         df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
-        
         blacklist = ["Pazaryeri", "Son Güncelleme"]
         df = df.drop(columns=[c for c in blacklist if c in df.columns])
-        
         df = df.fillna("")
         return df
     except: return None
@@ -131,25 +90,28 @@ def display_styled_table(df):
             val = str(row[col])
             display_val = "" if val.lower() in ["nan", "none", ""] else val
             
-            # İçerik Stili (Sadece yeşil/kırmızı haplar için)
-            inner_style = "padding: 6px 14px; display: inline-block;"
-            
+            # Dinamik Stil Belirleme
+            pill_style = ""
             if col in target_cols and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
                 if ref_val and curr_val:
                     if curr_val == ref_val:
-                        inner_style += 'background-color: #e8f5e9; color: #2e7d32; border-radius: 20px; font-weight: 600;'
+                        pill_style = 'background-color: #e8f5e9; color: #2e7d32; font-weight: 600;'
                     else:
-                        inner_style += 'background-color: #ffebee; color: #c62828; border-radius: 20px; font-weight: 600;'
+                        pill_style = 'background-color: #ffebee; color: #c62828; font-weight: 600;'
             
-            html += f'<td><span style="{inner_style}">{display_val}</span></td>'
+            # Veri boş değilse ama renklendirilmemişse (Standart veri)
+            if not pill_style and display_val != "":
+                pill_style = 'background-color: #f8f9fa; color: #333;'
+
+            html += f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
         html += '</tr>'
     
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
-# ================= ARAYÜZ =================
+# ================= ÜST PANEL VE ANA İÇERİK =================
 col_title, col_update = st.columns([2, 1])
 with col_title: st.title("📊 Fiyat Analiz Merkezi")
 with col_update:
@@ -164,7 +126,7 @@ if df is not None:
 
     display_styled_table(df)
 
-    # Excel İndirme Alanı
+    # Excel İndirme
     now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -178,5 +140,3 @@ if df is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
-else:
-    st.error("Bağlantı hatası.")
