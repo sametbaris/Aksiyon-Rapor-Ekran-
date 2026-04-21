@@ -73,7 +73,8 @@ def load_data():
 
 # ================= RENDER MOTORU =================
 def display_styled_table(df):
-    target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    target_cols = ["Marka", "Ürün Adı", "Barkod", "Ürün Kodu", "Aksiyon", "Braun Shop", 
+                        "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for col in df.columns:
