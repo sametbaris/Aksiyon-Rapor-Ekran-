@@ -5,12 +5,10 @@ import requests
 import base64
 import os
 import io
-from datetime import datetime
 
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
 
-# Bilgiler
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
@@ -65,7 +63,16 @@ def load_and_merge_data():
     try:
         df_fiyat = pd.read_csv(fiyat_url)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
-        df_fiyat["Barkod"] = df_fiyat["Barkod"].astype(str).str.split('.').str[0]
+        
+        # 🎯 ESNEK BARKOD BULMA: İçinde 'Barkod' geçen ilk sütunu bul
+        fiyat_barcode_col = next((c for c in df_fiyat.columns if "Barkod" in c), None)
+        
+        if fiyat_barcode_col:
+            df_fiyat = df_fiyat.rename(columns={fiyat_barcode_col: "KEY_BARCODE"})
+            df_fiyat["KEY_BARCODE"] = df_fiyat["KEY_BARCODE"].astype(str).str.split('.').str[0].str.strip()
+        else:
+            st.error("Google Sheets 'Guncel' sayfasında barkod sütunu bulunamadı!")
+            return None
 
         # MAPPING DOSYASI KONTROLÜ
         if os.path.exists(MAPPING_FILE):
@@ -73,29 +80,33 @@ def load_and_merge_data():
                 df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl')
                 df_map.columns = [c.strip() for c in df_map.columns]
                 
-                if "Ürün Barkodu" in df_map.columns:
-                    df_map = df_map.rename(columns={"Ürün Barkodu": "Barkod"})
-                
-                df_map["Barkod"] = df_map["Barkod"].astype(str).str.split('.').str[0]
-                link_cols = ["Barkod", "TY", "HB", "AMZ", "MM", "TKNS", "VTN"]
-                df_map = df_map[[c for c in link_cols if c in df_map.columns]]
-                
-                df_final = pd.merge(df_fiyat, df_map, on="Barkod", how="left")
-                return df_final.fillna("")
+                map_barcode_col = next((c for c in df_map.columns if "Barkod" in c), None)
+                if map_barcode_col:
+                    df_map = df_map.rename(columns={map_barcode_col: "KEY_BARCODE"})
+                    df_map["KEY_BARCODE"] = df_map["KEY_BARCODE"].astype(str).str.split('.').str[0].str.strip()
+                    
+                    # Sadece link kolonlarını al
+                    link_cols = ["KEY_BARCODE", "TY", "HB", "AMZ", "MM", "TKNS", "VTN"]
+                    df_map = df_map[[c for c in link_cols if c in df_map.columns]]
+                    
+                    df_final = pd.merge(df_fiyat, df_map, on="KEY_BARCODE", how="left")
+                    # Eski ismi geri verelim ki tabloda düzgün görünsün
+                    df_final = df_final.rename(columns={"KEY_BARCODE": fiyat_barcode_col})
+                    return df_final.fillna("")
             except Exception as e:
-                st.warning(f"Mapping dosyası okunamadı (Linkler devre dışı): {e}")
-                return df_fiyat.fillna("")
-        else:
-            st.info("Aksiyon_Mapping.xlsx bulunamadı. Sadece fiyatlar gösteriliyor.")
-            return df_fiyat.fillna("")
+                st.warning(f"Mapping hatası: {e}")
+        
+        return df_fiyat.rename(columns={"KEY_BARCODE": fiyat_barcode_col}).fillna("")
             
     except Exception as e:
-        st.error(f"Google Sheets bağlantı hatası: {e}")
+        st.error(f"Veri yükleme hatası: {e}")
         return None
 
 # ================= RENDER =================
 def display_styled_table(df):
-    display_cols = ["Marka", "Ürün Adı", "Barkod", "Ürün Kodu", "Alt Grup", "Aksiyon", "Braun Shop", 
+    # Tabloda gösterilecek sütun isimlerini esnek hale getirelim
+    barcode_col = next((c for c in df.columns if "Barkod" in c), "Barkod")
+    display_cols = ["Marka", "Ürün Adı", barcode_col, "Ürün Kodu", "Alt Grup", "Aksiyon", "Braun Shop", 
                     "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     
     link_mapping = {"Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"}
@@ -145,10 +156,9 @@ df = load_and_merge_data()
 col_t, col_u = st.columns([2, 1])
 with col_t: st.title("📊 Fiyat Analiz Merkezi")
 with col_u:
-    url_u = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1"
     try: 
-        up_time = requests.get(url_u).text.replace('"', '').strip()
-        st.markdown(f'<div class="update-badge">🔄 {up_time}</div>', unsafe_allow_html=True)
+        res_u = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
+        st.markdown(f'<div class="update-badge">🔄 {res_u.text.replace('"', '').strip()}</div>', unsafe_allow_html=True)
     except: pass
 
 if df is not None:
