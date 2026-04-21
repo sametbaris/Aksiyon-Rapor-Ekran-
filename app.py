@@ -19,7 +19,6 @@ st.markdown("""
     .custom-table th { color: #aaa; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 10px 20px; text-align: left; border: none; }
     .custom-table td { padding: 8px 20px; text-align: left; border: none; white-space: nowrap; }
 
-    /* HÜCRE İÇİNDEKİ HAP (SPAN) TASARIMI */
     .data-pill {
         padding: 6px 14px;
         display: inline-block;
@@ -28,7 +27,6 @@ st.markdown("""
         border: 2px solid transparent;
     }
 
-    /* HOVER EFEKTİ */
     .data-pill:hover {
         transform: scale(1.1);
         box-shadow: 0px 6px 15px rgba(0,0,0,0.08);
@@ -45,7 +43,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= YARDIMCI FONKSİYONLAR =================
+# ================= FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
@@ -76,10 +74,7 @@ def load_data():
 
 # ================= RENDER MOTORU =================
 def display_styled_table(df):
-    # Kıyaslama ve renklendirme yapılacak kolonlar
     target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
-    # Şeffaf kalması istenen teknik kolonlar
-    transparent_cols = ["Barkod", "Ürün Barkodu", "Ürün Kodu", "Braun Ürün Kodu", "Alt Grup"]
     
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for col in df.columns:
@@ -91,10 +86,11 @@ def display_styled_table(df):
         for col in df.columns:
             val = str(row[col])
             display_val = "" if val.lower() in ["nan", "none", ""] else val
+            col_lower = col.lower()
             
             pill_style = ""
             
-            # 1. Renklendirme Mantığı (Pazaryerleri için)
+            # 1. Renklendirme Mantığı (Pazaryerleri)
             if col in target_cols and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
@@ -104,13 +100,13 @@ def display_styled_table(df):
                     else:
                         pill_style = 'background-color: #ffebee; color: #c62828; font-weight: 600;'
             
-            # 2. Teknik kolonlar veya boş olmayan diğer kolonlar için stil
+            # 2. Teknik kolonlar için ŞEFFAFLIK FİLTRESİ
             if not pill_style and display_val != "":
-                # Eğer kolon şeffaf olması gerekenler listesindeyse arka plan verme
-                if any(tc in col for tc in transparent_cols):
+                # İsim eşleşmesi için daha geniş bir kontrol (Barkod, Kodu veya Grup geçiyorsa)
+                if any(x in col_lower for x in ["barkod", "kodu", "grup", "marka"]):
                     pill_style = 'background-color: transparent; color: #333;'
                 else:
-                    # Diğerleri (Ürün Adı vb.) için çok hafif bir gri hap (veya istersen bunu da transparent yapabilirsin)
+                    # Diğerleri (Ürün Adı vb.) için hafif gri hap
                     pill_style = 'background-color: #f8f9fa; color: #333;'
 
             html += f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
@@ -128,7 +124,7 @@ with col_update:
 
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Ürün adı, kod veya barkod ile hızlı arama...")
+    search = st.text_input("🔍 Listede arama yapın...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
