@@ -7,7 +7,7 @@ import re
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide")
 
-SHEET_ID = "BURAYA_SHEET_ID_GELECEK" # Kendi ID'ni yapıştır
+SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" # Kendi ID'ni yapıştır
 SHEET_NAME = "Guncel"
 
 # ================= MODERN CSS (YUVARLAK HATLAR VE HOVER) =================
