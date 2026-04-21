@@ -9,6 +9,7 @@ import io
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
 
+# Ayarlar
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
@@ -32,10 +33,10 @@ LOGOS = {
     "Braun Shop": get_base64_logo("braunshop.png")
 }
 
-# ================= CSS =================
+# ================= MODERN CSS =================
 st.markdown("""
 <style>
-    :root { --text-main: inherit; --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
+    :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 8px; font-family: 'Inter', sans-serif; border: none; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; }
@@ -44,15 +45,15 @@ st.markdown("""
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     .data-pill:hover { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
+    .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; }
+    .stTextInput input { border-radius: 50px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ================= YARDIMCI FONKSİYONLAR =================
-def clean_id(val):
-    """Pandas'ın sayıların sonuna eklediği .0 hatasını temizler."""
-    if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
-    v = str(val).strip()
-    return v.split('.')[0]
+def clean_barcode(val):
+    if pd.isna(val) or val == "": return ""
+    return str(val).split('.')[0].strip()
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
@@ -61,27 +62,29 @@ def parse_price(val):
     try: return float(clean)
     except: return None
 
-# ================= LOKAL BOT MANTIĞIYLA LİNK MOTORU =================
-def build_smart_link(label, raw_id, row):
-    val = clean_id(raw_id)
-    if val.startswith("http"): return val
+# ================= LOKAL KODDAN ALINAN AKILLI LİNK MOTORU =================
+def build_smart_link(source_col, raw_val, row):
+    val = str(raw_val).strip() if not pd.isna(raw_val) and str(raw_val).strip() != "" else ""
+    barcode = clean_barcode(row.get("Barkod_Internal", ""))
+
+    # Eğer mapping hücresinde tam link (http) varsa direkt onu kullan
+    if val.startswith("http"):
+        return val
+
+    # Eğer değer varsa ama tam link değilse (ID ise), lokal botun kurallarına göre URL üret
+    if val != "":
+        if source_col == "TY": return f"https://www.trendyol.com/brand/product-p-{val}"
+        if source_col == "HB": return f"https://www.hepsiburada.com/product-p-{val}"
+        if source_col == "AMZ": return f"https://www.amazon.com.tr/dp/{val}"
+        if source_col == "MM": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
+        if source_col == "BS Data ID": return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
+        if source_col == "CSS Code": return f"https://www.akakce.com/arama/?q={val}"
     
-    barcode = clean_id(row.get("Barkod_Int", ""))
-
-    # Veri yoksa Barkod araması (MediaMarkt, Teknosa, Vatan için)
-    if val == "":
-        if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}" if barcode else None
-        if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}" if barcode else None
-        if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/" if barcode else None
-        return None
-
-    # ID üzerinden link inşası
-    if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
-    if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
-    if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
-    if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
-    if label == "Braun Shop": return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
-    if label == "Aksiyon": return f"https://www.akakce.com/arama/?q={val}"
+    # Hiçbir veri yoksa ve barkod varsa MM/TKNS/VTN için barkod araması yap (Lokal kod mantığı)
+    if barcode:
+        if source_col == "MM": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
+        if source_col == "TKNS": return f"https://www.teknosa.com/arama/?s={barcode}"
+        if source_col == "VTN": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
     
     return None
 
@@ -89,102 +92,125 @@ def build_smart_link(label, raw_id, row):
 def load_and_merge_data():
     fiyat_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Guncel&range=A:M"
     try:
-        # Fiyatları her zaman string oku (.0 hatası için)
-        df_fiyat = pd.read_csv(fiyat_url, dtype=str)
+        # Fiyatları Çek
+        df_fiyat = pd.read_csv(fiyat_url)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # Fiyat barkodunu temizle
+        # Fiyat tablosu barkod sütununu bul
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
-        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_id)
+        if bc_col: df_fiyat["Barkod_Internal"] = df_fiyat[bc_col].apply(clean_barcode)
 
+        # Mapping'i Çek
         if os.path.exists(MAPPING_FILE):
-            df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
+            df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl')
             df_map.columns = [c.strip() for c in df_map.columns]
             
-            # Mapping barkodunu temizle
-            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
-            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_id)
-            
-            # Link ID sütunları
-            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code"]
-            df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
-            
-            df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
-            return df_final.fillna("")
+            # Mapping barkod sütununu bul (Ürün Barkodu)
+            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
+            if map_bc_col:
+                df_map["Barkod_Internal"] = df_map[map_bc_col].apply(clean_barcode)
+                
+                # Link için gerekli ID sütunları
+                link_cols = ["Barkod_Internal", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code"]
+                df_map_subset = df_map[[c for c in link_cols if c in df_map.columns]].copy()
+                
+                # Birleştir
+                df_final = pd.merge(df_fiyat, df_map_subset, on="Barkod_Internal", how="left")
+                return df_final.fillna("")
         
         return df_fiyat.fillna("")
     except Exception as e:
         st.error(f"Veri yükleme hatası: {e}")
         return None
 
-# ================= RENDER =================
+# ================= RENDER MOTORU =================
 def display_styled_table(df):
-    def find_col(name_part):
+    # Kolon eşleme (Büyük-küçük harf duyarsız arama)
+    def find_actual_col(df, name):
         for c in df.columns:
-            if name_part.lower() in c.lower(): return c
+            if name.lower() in c.lower(): return c
         return None
 
-    # Hatalı olan 'find_actual' düzeltildi, hepsi 'find_col' oldu
-    mapping = {
-        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
-        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu"),
-        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
-        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
-        "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
-        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
-        "Amazon": find_col("Amazon")
+    # Ekranda görünecek kolonların gerçek isimlerini bul
+    col_map = {
+        "Marka": find_actual_col(df, "Marka"),
+        "Ürün Adı": find_actual_col(df, "Ürün Adı"),
+        "Barkod": find_actual_col(df, "Barkod"),
+        "Ürün Kodu": find_actual_col(df, "Ürün Kodu"),
+        "Alt Grup": find_actual_col(df, "Alt Grup"),
+        "Aksiyon": find_actual_col(df, "Aksiyon"),
+        "Braun Shop": find_actual_col(df, "Braun Shop"),
+        "Media Markt": find_actual_col(df, "Media Markt"),
+        "Teknosa": find_actual_col(df, "Teknosa"),
+        "Vatan": find_actual_col(df, "Vatan"),
+        "Trendyol": find_actual_col(df, "Trendyol"),
+        "Hepsiburada": find_actual_col(df, "Hepsiburada"),
+        "Amazon": find_actual_col(df, "Amazon")
     }
 
-    # Hangi pazar hangi mapping kolonuna bakacak?
-    refs = {
-        "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM",
-        "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"
+    # Mağaza İsmi -> Mapping Sütun İsmi
+    link_ref = {
+        "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID",
+        "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", 
+        "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"
     }
 
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
-    for label, real in mapping.items():
+    for label, real in col_map.items():
         if real:
             logo = LOGOS.get(label)
-            html += f'<th><img src="{logo}" class="header-logo"></th>' if logo else f'<th>{label}</th>'
+            html += f'<th><img src="{logo}" class="header-logo"></th>' if logo else f'<th>{real}</th>'
     html += '</tr></thead><tbody>'
 
     for _, row in df.iterrows():
         html += '<tr>'
-        for label, real in mapping.items():
+        for label, real in col_map.items():
             if not real: continue
+            
             val = str(row[real])
-            d_val = "" if val.lower() in ["nan", "none", ""] else val
-            style = ""
+            display_val = "" if val.lower() in ["nan", "none", ""] else val
+            pill_style = ""
             
-            # Fiyat Kıyaslama (Braun Shop sütunu varsa)
-            bs_col_name = mapping.get("Braun Shop")
-            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
-                p_ref = parse_price(row[bs_col_name])
-                p_curr = parse_price(d_val)
-                if p_ref and p_curr:
-                    if p_curr == p_ref: style = 'background-color: #d4edda; color: #155724; font-weight: 600;'
-                    else: style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;'
+            # Fiyat Renklendirme
+            bs_col = col_map["Braun Shop"]
+            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col:
+                ref = parse_price(row[bs_col])
+                curr = parse_price(display_val)
+                if ref and curr:
+                    if curr == ref: pill_style = 'background-color: #d4edda; color: #155724; font-weight: 600;'
+                    else: pill_style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;'
             
-            if not style and d_val:
-                if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
-                else: style = 'background-color: var(--pill-default-bg);'
+            # Stil
+            if not pill_style and display_val != "":
+                if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): pill_style = 'background-color: transparent;'
+                else: pill_style = 'background-color: var(--pill-default-bg);'
 
-            # --- LİNK MOTORU ÇALIŞTIR ---
-            map_col = refs.get(label)
-            target_id = row.get(map_col, "")
-            url = build_smart_link(label, target_id, row)
+            # --- NOKTA ATIŞI LİNK ---
+            map_key = link_ref.get(label)
+            raw_id = row.get(map_key, "")
+            final_url = build_smart_link(map_key, raw_id, row)
 
-            if url and d_val:
-                html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
+            if final_url and display_val:
+                cell = f'<td><a href="{final_url}" target="_blank" class="data-link"><span class="data-pill" style="{pill_style}">{display_val}</span></a></td>'
             else:
-                html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
+                cell = f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
+            html += cell
         html += '</tr>'
     
-    st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
+    html += '</tbody></table></div>'
+    st.markdown(html, unsafe_allow_html=True)
 
-# ================= ANA AKIŞ =================
-st.title("📊 Fiyat Analiz Merkezi")
+# ================= MAIN =================
 df_data = load_and_merge_data()
+
+col_t, col_u = st.columns([2, 1])
+with col_t: st.title("📊 Fiyat Analiz Merkezi")
+with col_u:
+    try: 
+        res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
+        st.markdown(f'<div class="update-badge">🔄 {res.text.replace('"', '').strip()}</div>', unsafe_allow_html=True)
+    except: pass
+
 if df_data is not None:
     search = st.text_input("🔍 Hızlı arama...")
     if search:
