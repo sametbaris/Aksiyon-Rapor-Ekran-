@@ -7,7 +7,7 @@ import io
 st.set_page_config(page_title="Fiyat Analiz Paneli", page_icon="📈", layout="wide")
 
 # Google Sheets ID'niz (Kendi ID'nizi buraya yapıştırın)
-SHEET_ID = "1a2b3c4d5e6f7g8h9i0j_ABCDEFG" 
+SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" 
 SHEET_NAME = "Guncel"
 
 # Veriyi çeken fonksiyon
