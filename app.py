@@ -11,7 +11,7 @@ st.set_page_config(page_title="Fiyat Analizi", page_icon="⚖️", layout="wide"
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 SHEET_NAME = "Guncel"
 
-# ================= ULTRA MODERN CSS (HAP ODAKLI) =================
+# ================= ULTRA MODERN CSS =================
 st.markdown("""
 <style>
     .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
@@ -25,15 +25,14 @@ st.markdown("""
         display: inline-block;
         border-radius: 20px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent; /* Normalde görünmez çerçeve */
+        border: 2px solid transparent;
     }
 
-    /* SADECE HAP ÜZERİNE GELİNDİĞİNDE TETİKLENEN EFEKT */
+    /* HOVER EFEKTİ */
     .data-pill:hover {
-        transform: scale(1.1); /* Sadece hap %10 büyür */
-        box-shadow: 0px 6px 15px rgba(0,0,0,0.1);
+        transform: scale(1.1);
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.08);
         cursor: pointer;
-        filter: brightness(0.95); /* Hafif belirginleşme */
         z-index: 10;
     }
 
@@ -46,7 +45,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= FONKSİYONLAR =================
+# ================= YARDIMCI FONKSİYONLAR =================
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
     val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
@@ -77,7 +76,10 @@ def load_data():
 
 # ================= RENDER MOTORU =================
 def display_styled_table(df):
+    # Kıyaslama ve renklendirme yapılacak kolonlar
     target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    # Şeffaf kalması istenen teknik kolonlar
+    transparent_cols = ["Barkod", "Ürün Barkodu", "Ürün Kodu", "Braun Ürün Kodu", "Alt Grup"]
     
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for col in df.columns:
@@ -90,8 +92,9 @@ def display_styled_table(df):
             val = str(row[col])
             display_val = "" if val.lower() in ["nan", "none", ""] else val
             
-            # Dinamik Stil Belirleme
             pill_style = ""
+            
+            # 1. Renklendirme Mantığı (Pazaryerleri için)
             if col in target_cols and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
@@ -101,9 +104,14 @@ def display_styled_table(df):
                     else:
                         pill_style = 'background-color: #ffebee; color: #c62828; font-weight: 600;'
             
-            # Veri boş değilse ama renklendirilmemişse (Standart veri)
+            # 2. Teknik kolonlar veya boş olmayan diğer kolonlar için stil
             if not pill_style and display_val != "":
-                pill_style = 'background-color: #f8f9fa; color: #333;'
+                # Eğer kolon şeffaf olması gerekenler listesindeyse arka plan verme
+                if any(tc in col for tc in transparent_cols):
+                    pill_style = 'background-color: transparent; color: #333;'
+                else:
+                    # Diğerleri (Ürün Adı vb.) için çok hafif bir gri hap (veya istersen bunu da transparent yapabilirsin)
+                    pill_style = 'background-color: #f8f9fa; color: #333;'
 
             html += f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
         html += '</tr>'
@@ -111,7 +119,7 @@ def display_styled_table(df):
     html += '</tbody></table></div>'
     st.markdown(html, unsafe_allow_html=True)
 
-# ================= ÜST PANEL VE ANA İÇERİK =================
+# ================= ÜST PANEL VE İÇERİK =================
 col_title, col_update = st.columns([2, 1])
 with col_title: st.title("📊 Fiyat Analiz Merkezi")
 with col_update:
@@ -120,7 +128,7 @@ with col_update:
 
 df = load_data()
 if df is not None:
-    search = st.text_input("🔍 Listede arama yapın...")
+    search = st.text_input("🔍 Ürün adı, kod veya barkod ile hızlı arama...")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
