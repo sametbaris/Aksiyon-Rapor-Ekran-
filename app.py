@@ -64,39 +64,35 @@ def load_and_merge_data():
         df_fiyat = pd.read_csv(fiyat_url)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # 🎯 ESNEK BARKOD BULMA: İçinde 'Barkod' geçen ilk sütunu bul
-        fiyat_barcode_col = next((c for c in df_fiyat.columns if "Barkod" in c), None)
-        
-        if fiyat_barcode_col:
-            df_fiyat = df_fiyat.rename(columns={fiyat_barcode_col: "KEY_BARCODE"})
-            df_fiyat["KEY_BARCODE"] = df_fiyat["KEY_BARCODE"].astype(str).str.split('.').str[0].str.strip()
-        else:
-            st.error("Google Sheets 'Guncel' sayfasında barkod sütunu bulunamadı!")
-            return None
+        # Sütun isimlerini sabitlemek için "KEY_" takma adları veriyoruz
+        col_rename = {
+            next((c for c in df_fiyat.columns if "Barkod" in c), "Barkod"): "KEY_BARCODE",
+            next((c for c in df_fiyat.columns if "Ürün Kodu" in c), "Braun Ürün Kodu"): "KEY_URUN_KODU",
+            next((c for c in df_fiyat.columns if "Alt Grup" in c), "Alt Grup"): "KEY_ALT_GRUP"
+        }
+        df_fiyat = df_fiyat.rename(columns=col_rename)
+        df_fiyat["KEY_BARCODE"] = df_fiyat["KEY_BARCODE"].astype(str).str.split('.').str[0].str.strip()
 
-        # MAPPING DOSYASI KONTROLÜ
         if os.path.exists(MAPPING_FILE):
             try:
                 df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl')
                 df_map.columns = [c.strip() for c in df_map.columns]
                 
-                map_barcode_col = next((c for c in df_map.columns if "Barkod" in c), None)
-                if map_barcode_col:
-                    df_map = df_map.rename(columns={map_barcode_col: "KEY_BARCODE"})
+                map_bc_col = next((c for c in df_map.columns if "Barkod" in c), None)
+                if map_bc_col:
+                    df_map = df_map.rename(columns={map_bc_col: "KEY_BARCODE"})
                     df_map["KEY_BARCODE"] = df_map["KEY_BARCODE"].astype(str).str.split('.').str[0].str.strip()
                     
-                    # Sadece link kolonlarını al
-                    link_cols = ["KEY_BARCODE", "TY", "HB", "AMZ", "MM", "TKNS", "VTN"]
+                    # ID Sütunlarını alıyoruz
+                    link_cols = ["KEY_BARCODE", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code"]
                     df_map = df_map[[c for c in link_cols if c in df_map.columns]]
                     
                     df_final = pd.merge(df_fiyat, df_map, on="KEY_BARCODE", how="left")
-                    # Eski ismi geri verelim ki tabloda düzgün görünsün
-                    df_final = df_final.rename(columns={"KEY_BARCODE": fiyat_barcode_col})
                     return df_final.fillna("")
             except Exception as e:
                 st.warning(f"Mapping hatası: {e}")
         
-        return df_fiyat.rename(columns={"KEY_BARCODE": fiyat_barcode_col}).fillna("")
+        return df_fiyat.fillna("")
             
     except Exception as e:
         st.error(f"Veri yükleme hatası: {e}")
@@ -104,18 +100,26 @@ def load_and_merge_data():
 
 # ================= RENDER =================
 def display_styled_table(df):
-    # Tabloda gösterilecek sütun isimlerini esnek hale getirelim
-    barcode_col = next((c for c in df.columns if "Barkod" in c), "Barkod")
-    display_cols = ["Marka", "Ürün Adı", barcode_col, "Ürün Kodu", "Alt Grup", "Aksiyon", "Braun Shop", 
+    # Kaybolan sütunları geri getiriyoruz
+    display_cols = ["Marka", "Ürün Adı", "KEY_BARCODE", "KEY_URUN_KODU", "KEY_ALT_GRUP", "Aksiyon", "Braun Shop", 
                     "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     
-    link_mapping = {"Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"}
+    # Görsel İsimlendirme (KEY olanları normal ismine çeviriyoruz)
+    col_visual_names = {"KEY_BARCODE": "Barkod", "KEY_URUN_KODU": "Braun Ürün Kodu", "KEY_ALT_GRUP": "Alt Grup"}
+    
+    # Linkleme Mantığı
+    link_mapping = {
+        "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", 
+        "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ",
+        "Braun Shop": "BS Data ID", "Aksiyon": "CSS Code"
+    }
 
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for col in display_cols:
         if col in df.columns:
-            logo = LOGOS.get(col)
-            html += f'<th><img src="{logo}" class="header-logo"></th>' if logo else f'<th>{col}</th>'
+            visual_name = col_visual_names.get(col, col)
+            logo = LOGOS.get(visual_name)
+            html += f'<th><img src="{logo}" class="header-logo"></th>' if logo else f'<th>{visual_name}</th>'
     html += '</tr></thead><tbody>'
 
     for _, row in df.iterrows():
@@ -126,7 +130,8 @@ def display_styled_table(df):
             display_val = "" if val.lower() in ["nan", "none", ""] else val
             pill_style = ""
             
-            if col in link_mapping.keys() and "Braun Shop" in df.columns:
+            # Fiyat Renklendirme
+            if col in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and "Braun Shop" in df.columns:
                 ref_val = parse_price(row["Braun Shop"])
                 curr_val = parse_price(display_val)
                 if ref_val and curr_val:
@@ -134,14 +139,27 @@ def display_styled_table(df):
                     else: pill_style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;'
             
             if not pill_style and display_val != "":
-                if any(x in col.lower() for x in ["barkod", "kodu", "grup", "marka"]): pill_style = 'background-color: transparent;'
+                if any(x in col.lower() for x in ["barcode", "kodu", "grup", "marka"]): pill_style = 'background-color: transparent;'
                 else: pill_style = 'background-color: var(--pill-default-bg);'
 
-            link_col = link_mapping.get(col)
-            url = str(row.get(link_col, ""))
-            
-            if url and url not in ["", "nan", "None"] and display_val:
-                cell = f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{pill_style}">{display_val}</span></a></td>'
+            # --- LİNK OLUŞTURMA SİHRİ ---
+            link_source_col = link_mapping.get(col)
+            raw_id = str(row.get(link_source_col, ""))
+            final_url = ""
+
+            if raw_id and raw_id not in ["nan", "None", ""]:
+                # Braun Shop ve Aksiyon (Akakçe) ID bazlı olduğu için link oluşturuyoruz
+                if col == "Braun Shop":
+                    final_url = f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={raw_id}"
+                elif col == "Aksiyon":
+                    final_url = f"https://www.akakce.com/arama/?q={raw_id}"
+                elif col == "Trendyol" and raw_id.isdigit(): # Eğer sadece ID varsa
+                    final_url = f"https://www.trendyol.com/brand/product-p-{raw_id}"
+                else:
+                    final_url = raw_id # Diğerleri zaten tam link olarak maplenmişse
+
+            if final_url and display_val:
+                cell = f'<td><a href="{final_url}" target="_blank" class="data-link"><span class="data-pill" style="{pill_style}">{display_val}</span></a></td>'
             else:
                 cell = f'<td><span class="data-pill" style="{pill_style}">{display_val}</span></td>'
             html += cell
