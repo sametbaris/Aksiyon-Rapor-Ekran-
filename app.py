@@ -4,94 +4,102 @@ from datetime import datetime
 import io
 
 # ================= AYARLAR =================
-st.set_page_config(page_title="Fiyat Analiz Paneli", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Fiyat Karşılaştırma Paneli", page_icon="⚖️", layout="wide")
 
-# Google Sheets ID'niz (Kendi ID'nizi buraya yapıştırın)
+# Google Sheets ID'nizi buraya yapıştırın
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0" 
 SHEET_NAME = "Guncel"
 
-# Veriyi çeken fonksiyon
 @st.cache_data(ttl=60) 
 def load_data():
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     try:
         df = pd.read_csv(url)
-        # Sütun isimlerindeki boşlukları temizleyelim
         df.columns = [c.strip() for c in df.columns]
         return df
     except:
         return None
 
-# ================= RENKLENDİRME MANTIĞI (STYLING) =================
-def highlight_min_prices(row):
+# ================= BRAUN SHOP BAZLI RENKLENDİRME MANTIĞI =================
+def apply_comparative_style(row):
     """
-    Her satırdaki fiyat sütunlarını karşılaştırır ve en ucuz olanı yeşil yapar.
+    Braun Shop fiyatını baz alır:
+    - Eşitse: Yeşil
+    - Düşükse: Kırmızı
+    - Yüksekse: Kırmızı
     """
-    # Karşılaştırılacak fiyat sütunları
-    price_cols = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
-    
-    # Sadece tabloda var olan sütunları seçelim
-    valid_cols = [c for c in price_cols if c in row.index]
-    
-    # Değerleri sayıya çevirelim (Hata almamak için)
-    numeric_values = pd.to_numeric(row[valid_cols], errors='coerce')
-    min_val = numeric_values.min()
+    # Karşılaştırılacak sütunlar
+    target_cols = ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    ref_col = "Braun Shop"
     
     styles = ['' for _ in row.index]
-    for col in valid_cols:
-        col_idx = row.index.get_loc(col)
-        val = pd.to_numeric(row[col], errors='coerce')
-        if pd.notnull(val) and val == min_val and min_val > 0:
-            styles[col_idx] = 'background-color: #d4edda; color: #155724; font-weight: bold' # Soft Yeşil
+    
+    # Referans fiyatı sayıya çevirelim
+    ref_val = pd.to_numeric(row[ref_col], errors='coerce') if ref_col in row.index else None
+    
+    if pd.notnull(ref_val) and ref_val > 0:
+        for col in target_cols:
+            if col in row.index:
+                col_idx = row.index.get_loc(col)
+                current_val = pd.to_numeric(row[col], errors='coerce')
+                
+                if pd.notnull(current_val):
+                    if current_val == ref_val:
+                        # Tam eşitse YEŞİL
+                        styles[col_idx] = 'background-color: #d4edda; color: #155724; font-weight: bold;'
+                    else:
+                        # Düşük veya Yüksekse KIRMIZI
+                        styles[col_idx] = 'background-color: #f8d7da; color: #721c24;'
+    
     return styles
 
 # ================= ARAYÜZ =================
-st.title("📈 Stratejik Fiyat Takip Paneli")
+st.title("⚖️ Braun Shop Bazlı Fiyat Analizi")
+st.info("💡 Braun Shop fiyatına eşit olanlar **Yeşil**, düşük veya yüksek olanlar **Kırmızı** görünür.")
 
 df = load_data()
 
 if df is not None:
-    # Arama motoru
-    search = st.text_input("🔍 Ürün Ara (Barkod, İsim vb.):")
+    # Arama Kutusu
+    search = st.text_input("🔍 Listede Ara (Ürün Adı, Barkod...):")
     if search:
         df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-    # Renklendirmeyi uygula
-    styled_df = df.style.apply(highlight_min_prices, axis=1)
+    # Renkleri Uygula
+    styled_df = df.style.apply(apply_comparative_style, axis=1)
 
-    # Link ve Sütun Yapılandırması
-    # Not: CSV ile linkler doğrudan gelmediği için, eğer link sütunların varsa
-    # onları LinkColumn olarak tanımlayabiliriz. 
-    # Eğer linkler hücrenin içindeyse, Excel formatında çekmemiz gerekir.
-    
+    # Tablo Gösterimi
     st.dataframe(
         styled_df,
         use_container_width=True,
         hide_index=True,
+        # Eğer link sütunların varsa buraya ekleyebilirsin:
         column_config={
             "Aksiyon": st.column_config.NumberColumn(format="%.2f TL"),
             "Braun Shop": st.column_config.NumberColumn(format="%.2f TL"),
+            "Media Markt": st.column_config.NumberColumn(format="%.2f TL"),
+            "Teknosa": st.column_config.NumberColumn(format="%.2f TL"),
+            "Vatan": st.column_config.NumberColumn(format="%.2f TL"),
             "Trendyol": st.column_config.NumberColumn(format="%.2f TL"),
             "Hepsiburada": st.column_config.NumberColumn(format="%.2f TL"),
             "Amazon": st.column_config.NumberColumn(format="%.2f TL"),
-            # Eğer ürün linklerini içeren bir sütun eklemek istersen:
-            # "Ürün Linki": st.column_config.LinkColumn("Git"),
         }
     )
 
     st.divider()
     
-    # Excel Export
-    now = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    # Excel Export (Tarih ve Saatli Dosya Adı)
+    now = datetime.now().strftime("%d.%m.%Y_%H-%M")
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False)
     
     st.download_button(
-        label="📥 Verileri Excel Olarak İndir",
+        label=f"📥 Verileri Excel Olarak İndir ({now})",
         data=output.getvalue(),
-        file_name=f"Fiyat_Analizi_{now}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        file_name=f"Fiyat_Analiz_Raporu_{now}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
     )
 else:
-    st.warning("Veri yüklenemedi. Lütfen Google Sheets ID ve Paylaşım ayarlarını kontrol edin.")
+    st.error("Google Sheets bağlantısı kurulamadı!")
