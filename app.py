@@ -10,7 +10,7 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
-st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Aksiyon Raporu", page_icon="⚖️", layout="wide")
 
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
@@ -345,7 +345,7 @@ def display_styled_table(df, mapping):
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
 with col_title:
-    st.title("📊 Fiyat Analiz Merkezi")
+    st.title("📊 Aksiyon Raporu")
 
 update_text = ""
 try: 
@@ -384,7 +384,7 @@ if df_data is not None:
     with col_plat:
         filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
     with col_stat:
-        filter_status = st.selectbox("🎨 Fiyat Rengi", ["Tümü", "🔴 Kırmızı (Daha Ucuz)", "🟢 Yeşil (Aynı Fiyat)", "🟡 Sarı (Daha Pahalı)"])
+        filter_status = st.selectbox("🎨 Fiyat Rengi", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"])
 
     if search:
         df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
@@ -417,7 +417,7 @@ if df_data is not None:
     df_export = df_data[export_cols].copy()
     
     current_time_str = datetime.now().strftime("%d-%m-%Y_%H-%M")
-    excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
+    excel_filename = f"Aksiyon_Analiz_Raporu_{current_time_str}.xlsx"
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
