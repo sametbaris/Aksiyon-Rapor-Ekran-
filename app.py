@@ -49,14 +49,13 @@ st.markdown("""
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
-    """URL'leri bozmadan sadece sayıların sonundaki .0 kalıntısını siler"""
+    """URL'leri bozmadan sadece ID'lerin sonundaki .0 kalıntısını siler."""
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
-    # Web adresi ise noktalarından bölme, doğrudan geri ver!
+    # Web adresi ise dokunmadan geri ver
     if v.startswith("http"): return v
-    # Değilse ve .0 ile bitiyorsa o kısmı at (Pandas float hatası)
-    if v.endswith(".0"): return v[:-2]
-    return v
+    # Değilse (yani ID ise) Pandas'ın eklediği .0 kısmını kesip at
+    return v.split('.')[0]
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
@@ -70,7 +69,7 @@ def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
 
-    # 1. AKSİYON (Akakçe)
+    # 1. AKSİYON (Akakçe) -> Excel'deki gizli köprüden çeker
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
@@ -79,7 +78,7 @@ def build_smart_link(label, raw_id, row):
             return f"https://www.akakce.com/arama/?q={val}"
         return f"https://www.akakce.com/arama/?q={barcode}" if barcode else None
 
-    # Zaten tam bir URL ise onu döndür (Vatan, Hepsiburada, Amazon vb. kurtarıcısı)
+    # Zaten tam bir URL ise onu döndür (Vatan, Amazon vb. için koruma)
     if val.startswith("http"): 
         return val
 
@@ -89,9 +88,10 @@ def build_smart_link(label, raw_id, row):
             return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
 
-    # 3. STANDART KALIPLAR (Eğer hücrede sadece ID varsa)
+    # 3. STANDART KALIPLAR
     if val != "":
-        if label == "Trendyol": return f"https://www.trendyol.com/p-{val}"
+        # Trendyol orijinal/doğru link yapısına çevrildi!
+        if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
@@ -121,7 +121,7 @@ def load_and_merge_data():
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
             df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             
-            # --- AKSİYON (AKAKÇE) İÇİN EXCEL'DEKİ GİZLİ KÖPRÜLERİ ÇEKME ---
+            # --- AKSİYON (AKAKÇE) GİZLİ KÖPRÜLERİNİ ÇEKME ---
             wb = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws = wb.active
             headers_ex = [str(c.value).strip() if c.value else "" for c in ws[1]]
