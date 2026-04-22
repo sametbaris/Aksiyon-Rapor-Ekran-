@@ -7,6 +7,7 @@ import os
 import io
 import openpyxl
 from datetime import datetime
+import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
@@ -37,7 +38,7 @@ def load_logo_pair(file_name):
     return {
         "light": light_logo, 
         "dark": dark_logo if has_custom_dark else light_logo,
-        "invert_dark": not has_custom_dark # Beyaz resmi yoksa CSS ile otomatik beyazlatır
+        "invert_dark": not has_custom_dark # Beyaz resmi yoksa CSS ile biz beyazlatacağız
     }
 
 LOGOS = {
@@ -50,6 +51,49 @@ LOGOS = {
     "Amazon": load_logo_pair("amazon.png"),
     "Braun Shop": load_logo_pair("braunshop.png")
 }
+
+# ================= SİHİRLİ TEMA DEDEKTÖRÜ =================
+# Bu mini script, Streamlit kilitlenmeden sadece arka plan rengini okur
+# Arka plan rengine göre logoları anında Light/Dark yapar.
+components.html(
+    """
+    <script>
+    try {
+        const parentDoc = window.parent.document;
+        let styleTag = parentDoc.getElementById("dynamic-theme-style");
+        if (!styleTag) {
+            styleTag = parentDoc.createElement("style");
+            styleTag.id = "dynamic-theme-style";
+            parentDoc.head.appendChild(styleTag);
+        }
+        
+        setInterval(() => {
+            const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
+            let rgb = bgColor.match(/\\d+/g);
+            if (rgb && rgb.length >= 3) {
+                // Arka plan renginin parlaklığını ölçer
+                let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+                if (brightness < 128) {
+                    // Dark Mode (Siyah Arkaplan) Aktif
+                    styleTag.innerHTML = `
+                        .logo-light { display: none !important; }
+                        .logo-dark { display: inline-block !important; }
+                        .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
+                    `;
+                } else {
+                    // Light Mode (Beyaz Arkaplan) Aktif
+                    styleTag.innerHTML = `
+                        .logo-dark { display: none !important; }
+                        .logo-light { display: inline-block !important; }
+                    `;
+                }
+            }
+        }, 500); // Sistemi kasmaması için saniyede 2 kez sessizce kontrol eder
+    } catch (e) {}
+    </script>
+    """,
+    height=0, width=0
+)
 
 # ================= CSS =================
 st.markdown("""
@@ -66,15 +110,8 @@ st.markdown("""
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
     
-    /* --- OTOMATİK GÜVENLİ TEMA YÖNETİMİ --- */
+    /* Varsayılan olarak Dark logolar gizlidir, JavaScript duruma göre açar */
     .logo-dark { display: none; }
-    
-    /* Cihazın sistem temasını dinler (Streamlit Ayarlarından "Use system setting" seçilmelidir) */
-    @media (prefers-color-scheme: dark) {
-        .logo-light { display: none !important; }
-        .logo-dark { display: inline-block !important; }
-        .invert-logo { filter: brightness(0) invert(1); }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -257,9 +294,9 @@ def display_styled_table(df, mapping):
                 l_src = logo_pair["light"]
                 d_src = logo_pair["dark"]
                 
-                # Sadece siyah olan logolar karanlıkta otomatik beyazlar
                 inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
                 
+                # İki logoyu da yüklüyoruz, ekrandaki CSS hangisinin gösterileceğine karar veriyor!
                 html += f'<th><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></th>'
             else:
                 html += f'<th>{label}</th>'
@@ -337,6 +374,7 @@ if df_data is not None:
     else:
         unique_gruplar = ["Tümü"]
 
+    # --- 5 Sütunlu Temiz Kontrol Paneli ---
     col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
     
     with col_search:
