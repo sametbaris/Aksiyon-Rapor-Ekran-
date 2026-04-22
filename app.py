@@ -277,7 +277,6 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     st.title("📊 Fiyat Analiz Merkezi")
 
-# Son Güncelleme Verisini Çekme (Sağ Üst Rozet)
 update_text = ""
 try: 
     res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
@@ -292,20 +291,37 @@ with col_update:
 df_data = load_and_merge_data()
 
 if df_data is not None:
-    # Arama ve Filtreler
-    col_search, col_plat, col_stat, col_btn = st.columns([3, 2, 2, 2])
+    mapping = get_column_mapping(df_data)
+    
+    # Alt Grup Verilerini Dinamik Olarak Çekme
+    alt_grup_col = mapping.get("Alt Grup")
+    if alt_grup_col and alt_grup_col in df_data.columns:
+        gruplar = [str(x).strip() for x in df_data[alt_grup_col].dropna().unique() if str(x).strip() != ""]
+        unique_gruplar = ["Tümü"] + sorted(list(set(gruplar)))
+    else:
+        unique_gruplar = ["Tümü"]
+
+    # 5 Sütunlu Arama ve Filtreler Yapısı
+    col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
+    
     with col_search:
-        search = st.text_input("🔍 Ürün Adı veya Barkod Ara...")
+        search = st.text_input("🔍 Ürün Adı veya Barkod...")
+    with col_grup:
+        filter_grup = st.selectbox("📂 Alt Grup", unique_gruplar)
     with col_plat:
-        filter_platform = st.selectbox("🛒 Platform Filtresi", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
+        filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
     with col_stat:
         filter_status = st.selectbox("🎨 Fiyat Rengi", ["Tümü", "🔴 Kırmızı (Daha Ucuz)", "🟢 Yeşil (Aynı Fiyat)", "🟡 Sarı (Daha Pahalı)"])
 
+    # 1. Metin / Barkod Arama Filtresi
     if search:
         df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-    mapping = get_column_mapping(df_data)
+    # 2. Alt Grup Filtresi
+    if filter_grup != "Tümü" and alt_grup_col:
+        df_data = df_data[df_data[alt_grup_col].astype(str).str.strip() == filter_grup]
 
+    # 3. Renk ve Platform Filtresi
     if filter_status != "Tümü":
         bs_col = mapping.get("Braun Shop")
         if bs_col:
@@ -331,7 +347,6 @@ if df_data is not None:
     export_cols = [real for label, real in mapping.items() if real in df_data.columns]
     df_export = df_data[export_cols].copy()
     
-    # Dinamik Dosya İsmi (O Anki Tarih ve Saat ile)
     current_time_str = datetime.now().strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
 
