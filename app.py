@@ -39,7 +39,7 @@ LOGOS = {
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
-    .table-container { width: 100%; margin-top: 20px; overflow-x: auto; }
+    .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 8px; font-family: 'Inter', sans-serif; border: none; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; }
     .custom-table th { color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px; padding: 10px 20px; text-align: center; }
@@ -47,6 +47,8 @@ st.markdown("""
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     .data-pill:hover { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
+    /* İndirme Butonu Stili */
+    div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,6 +70,26 @@ def parse_price(val):
         return float(clean)
     except: 
         return None
+
+def get_column_mapping(df):
+    """Ekranda gösterilecek ve Excel'e indirilecek ana kolonları bulur."""
+    def find_col(name_part, exclude=None):
+        for c in df.columns:
+            if name_part.lower() in c.lower():
+                if exclude and exclude.lower() in c.lower():
+                    continue
+                return c
+        return None
+
+    return {
+        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
+        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
+        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
+        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
+        "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
+        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
+        "Amazon": find_col("Amazon")
+    }
 
 # ================= AKILLI LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
@@ -196,26 +218,7 @@ def load_and_merge_data():
         return None
 
 # ================= RENDER =================
-def display_styled_table(df):
-    def find_col(name_part, exclude=None):
-        for c in df.columns:
-            if name_part.lower() in c.lower():
-                if exclude and exclude.lower() in c.lower():
-                    continue
-                return c
-        return None
-
-    # HATA BURADAYDI ÇÖZÜLDÜ: Kodu ararken Barkod sütununu dışladık!
-    mapping = {
-        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
-        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
-        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
-        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
-        "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
-        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
-        "Amazon": find_col("Amazon")
-    }
-
+def display_styled_table(df, mapping):
     refs = {
         "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM",
         "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ"
@@ -273,7 +276,8 @@ st.title("📊 Fiyat Analiz Merkezi")
 df_data = load_and_merge_data()
 
 if df_data is not None:
-    col_search, col_plat, col_stat = st.columns([2, 1, 1])
+    # --- ÜST PANEL (Arama, Filtreler ve İndir Butonu) ---
+    col_search, col_plat, col_stat, col_btn = st.columns([3, 2, 2, 2])
     with col_search:
         search = st.text_input("🔍 Ürün Adı veya Barkod Ara...")
     with col_plat:
@@ -284,23 +288,19 @@ if df_data is not None:
     if search:
         df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
+    mapping = get_column_mapping(df_data)
+
     if filter_status != "Tümü":
-        def get_col(df, name):
-            for c in df.columns:
-                if name.lower() in c.lower(): return c
-            return None
-            
-        bs_col = get_col(df_data, "Braun Shop")
+        bs_col = mapping.get("Braun Shop")
         if bs_col:
             p_list = [filter_platform] if filter_platform != "Tümü" else ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
-            actual_cols = [get_col(df_data, p) for p in p_list]
+            actual_cols = [mapping.get(p) for p in p_list]
             actual_cols = [c for c in actual_cols if c] 
             
             def check_color(row):
                 bs_val = parse_price(row[bs_col])
                 if bs_val is None: 
                     return False
-                
                 for col in actual_cols:
                     p_val = parse_price(row[col])
                     if p_val is not None:
@@ -311,4 +311,23 @@ if df_data is not None:
                 
             df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    display_styled_table(df_data)
+    # --- AKILLI EXCEL İNDİRME ---
+    export_cols = [real for label, real in mapping.items() if real in df_data.columns]
+    df_export = df_data[export_cols].copy()
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_export.to_excel(writer, index=False)
+    
+    with col_btn:
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.download_button(
+            label="📥 Excel İndir", 
+            data=output.getvalue(), 
+            file_name="Fiyat_Analiz_Raporu.xlsx", 
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            use_container_width=True
+        )
+
+    # --- TABLOYU ÇİZ ---
+    display_styled_table(df_data, mapping)
