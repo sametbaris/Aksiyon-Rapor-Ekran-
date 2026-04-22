@@ -25,6 +25,7 @@ def get_base64_logo(file_name):
     return None
 
 LOGOS = {
+    "Aksiyon": get_base64_logo("akakce.png"),
     "Media Markt": get_base64_logo("mediamarkt.png"),
     "Teknosa": get_base64_logo("teknosa.png"),
     "Vatan": get_base64_logo("vatan.png"),
