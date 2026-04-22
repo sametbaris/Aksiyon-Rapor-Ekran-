@@ -7,6 +7,7 @@ import os
 import io
 import openpyxl
 from datetime import datetime
+import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
@@ -26,16 +27,19 @@ def get_base64_logo(file_name):
     return None
 
 def load_logo_pair(file_name):
-    """Dark/Light mode için logoları çift olarak yükler."""
+    """Hem Light hem de Dark logo versiyonlarını arar ve eşleştirir."""
     base_name = file_name.split('.')[0]
     ext = file_name.split('.')[1]
     
     light_logo = get_base64_logo(file_name)
-    # Beyaz logonun adı (örn: amazon_white.png) aranır
     dark_logo = get_base64_logo(f"{base_name}_white.{ext}")
     
-    # Eğer beyaz logo yoksa, hata vermemesi için orijinalini kullanır
-    return {"light": light_logo, "dark": dark_logo if dark_logo else light_logo}
+    has_custom_dark = dark_logo is not None
+    return {
+        "light": light_logo, 
+        "dark": dark_logo if has_custom_dark else light_logo,
+        "invert_dark": not has_custom_dark # Eğer _white resmi yoksa, siyah metinli logoları biz beyazlatacağız
+    }
 
 LOGOS = {
     "Aksiyon": load_logo_pair("akakce.png"),
@@ -47,6 +51,34 @@ LOGOS = {
     "Amazon": load_logo_pair("amazon.png"),
     "Braun Shop": load_logo_pair("braunshop.png")
 }
+
+# ================= TEMA DEDEKTÖRÜ (SİHİR BURADA) =================
+# Kullanıcı menüden tema değiştirdiğinde anında yakalayan JS radarı
+components.html(
+    """
+    <script>
+    try {
+        const parentDoc = window.parent.document;
+        const updateTheme = () => {
+            const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
+            let isDark = false;
+            let rgb = bgColor.match(/\\d+/g);
+            if(rgb && rgb.length >= 3) {
+                // Arka plan renginin parlaklığını ölçer (Siyah arka plan = Dark Mode)
+                let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+                isDark = brightness < 128;
+            }
+            if (isDark) { parentDoc.body.classList.add('my-dark-theme'); } 
+            else { parentDoc.body.classList.remove('my-dark-theme'); }
+        };
+        updateTheme();
+        const observer = new MutationObserver(updateTheme);
+        observer.observe(parentDoc.body, { attributes: true, childList: true, subtree: true });
+    } catch (e) {}
+    </script>
+    """,
+    height=0, width=0
+)
 
 # ================= CSS =================
 st.markdown("""
@@ -63,12 +95,21 @@ st.markdown("""
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
     
-    /* --- DARK MODE LOGO SİHRİ --- */
+    /* --- DARK/LIGHT LOGO YÖNETİMİ --- */
     .logo-dark { display: none; }
+    
+    /* Cihaz Sistemi Dark Mode'daysa */
     @media (prefers-color-scheme: dark) {
         .logo-light { display: none !important; }
         .logo-dark { display: inline-block !important; }
     }
+    
+    /* Kullanıcı Menüden Dark Mode Seçtiyse (Sihirli CSS Kancası) */
+    body.my-dark-theme .logo-light { display: none !important; }
+    body.my-dark-theme .logo-dark { display: inline-block !important; }
+    
+    /* Beyaz resmi bulunamayan Siyah logolar için Otomatik Renk Çevirici */
+    .invert-logo { filter: brightness(0) invert(1); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -248,10 +289,13 @@ def display_styled_table(df, mapping):
         if real:
             logo_pair = LOGOS.get(label)
             if logo_pair and logo_pair["light"]:
-                # Hem Light Hem Dark Logoyu HTML içine gömüyoruz, CSS hangisini göstereceğini seçiyor
                 l_src = logo_pair["light"]
                 d_src = logo_pair["dark"]
-                html += f'<th><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark" title="{label}"></th>'
+                
+                # Amazon ve Aksiyon siyah logolardır. _white resmi yoksa sistem onları otomatik beyaza boyar!
+                inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
+                
+                html += f'<th><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></th>'
             else:
                 html += f'<th>{label}</th>'
     html += '</tr></thead><tbody>'
@@ -366,7 +410,6 @@ if df_data is not None:
                 
             df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    # --- AKILLI EXCEL İNDİRME ---
     export_cols = [real for label, real in mapping.items() if real in df_data.columns]
     df_export = df_data[export_cols].copy()
     
