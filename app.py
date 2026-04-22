@@ -67,7 +67,6 @@ def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
 
-    # 1. AKSİYON (Akakçe) - Excel'deki gizli linki kullanır
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
@@ -75,27 +74,22 @@ def build_smart_link(label, raw_id, row):
         if val: return f"https://www.akakce.com/arama/?q={val}"
         return f"https://www.akakce.com/arama/?q={barcode}" if barcode else None
 
-    # Zaten URL ise dokunma (Amazon, Hepsiburada koruması)
     if val.startswith("http"): 
         return val
 
-    # 2. BRAUN SHOP (MUCİZE BURADA!) -> Google Sheets'ten kazınan Gerçek SEO Linki
     if label == "Braun Shop":
         gs_link = row.get("GS_BS_Link")
         if pd.notna(gs_link) and str(gs_link).startswith("http"):
             return str(gs_link)
-        # Fallback (Eğer link yoksa ID ile dener)
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
 
-    # 3. DİĞER PLATFORMLAR (Bozulmayan, doğru çalışan kalıplar)
     if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
     
-    # 4. HİÇBİR VERİ YOKSA BARKOD ARAMASI
     if barcode:
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
@@ -109,14 +103,12 @@ def load_and_merge_data():
     fiyat_url_xlsx = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx&sheet=Guncel"
     
     try:
-        # ANA VERİYİ ÇEK
         df_fiyat = pd.read_csv(fiyat_url_csv, dtype=str)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
 
-        # GOOGLE SHEETS'TEN GİZLİ LİNKLERİ ÇEK (BRAUN SHOP İÇİN)
         gsheet_bs_links = {}
         try:
             r = requests.get(fiyat_url_xlsx)
@@ -145,7 +137,6 @@ def load_and_merge_data():
         
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
 
-        # MAPPING DOSYASINDAN BİLGİLERİ AL
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -153,7 +144,6 @@ def load_and_merge_data():
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
             df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             
-            # Aksiyon (Akakçe) Gizli Linklerini Al
             wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws_map = wb_map.active
             headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
@@ -219,14 +209,20 @@ def display_styled_table(df):
             d_val = "" if val.lower() in ["nan", "none", ""] else val
             style = ""
             
+            # --- 3 BOYUTLU RENK MANTIĞI ---
             bs_col_name = mapping.get("Braun Shop")
             if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
                 p_ref = parse_price(row[bs_col_name])
                 p_curr = parse_price(d_val)
                 if p_ref and p_curr:
-                    if p_curr == p_ref: style = 'background-color: #d4edda; color: #155724; font-weight: 600;'
-                    else: style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;'
+                    if p_curr == p_ref: 
+                        style = 'background-color: #d4edda; color: #155724; font-weight: 600;' # Eşitse YEŞİL
+                    elif p_curr > p_ref:
+                        style = 'background-color: #fff3cd; color: #856404; font-weight: 600;' # Pahalıysa SARI
+                    else: 
+                        style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;' # Ucuzsa KIRMIZI
             
+            # Teknik kolonlar şeffaf kalsın
             if not style and d_val:
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
