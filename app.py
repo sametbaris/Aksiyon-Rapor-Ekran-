@@ -48,9 +48,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================= YARDIMCI FONKSİYONLAR =================
-def clean_id(val):
+def clean_val(val):
+    """URL'leri bozmadan sadece sayıların sonundaki .0 kalıntısını siler"""
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
-    return str(val).split('.')[0].strip()
+    v = str(val).strip()
+    # Web adresi ise noktalarından bölme, doğrudan geri ver!
+    if v.startswith("http"): return v
+    # Değilse ve .0 ile bitiyorsa o kısmı at (Pandas float hatası)
+    if v.endswith(".0"): return v[:-2]
+    return v
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
@@ -61,12 +67,10 @@ def parse_price(val):
 
 # ================= AKILLI LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
-    val = clean_id(raw_id)
-    if val.startswith("http"): return val
-    
-    barcode = clean_id(row.get("Barkod_Int", ""))
+    val = clean_val(raw_id)
+    barcode = clean_val(row.get("Barkod_Int", ""))
 
-    # 1. AKSİYON (Akakçe) - Gizli linki kullanır, yoksa CSS koduyla arama yapar
+    # 1. AKSİYON (Akakçe)
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
@@ -75,24 +79,28 @@ def build_smart_link(label, raw_id, row):
             return f"https://www.akakce.com/arama/?q={val}"
         return f"https://www.akakce.com/arama/?q={barcode}" if barcode else None
 
-    # 2. BRAUN SHOP - Sadece BS Data ID kullanır (.0 temizlenmiş şekilde)
+    # Zaten tam bir URL ise onu döndür (Vatan, Hepsiburada, Amazon vb. kurtarıcısı)
+    if val.startswith("http"): 
+        return val
+
+    # 2. BRAUN SHOP
     if label == "Braun Shop":
         if val: 
             return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
 
-    # 3. LİNK YOKSA BARKOD TARAMASI
-    if val == "":
-        if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}" if barcode else None
-        if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}" if barcode else None
-        if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/" if barcode else None
-        return None
-
-    # 4. STANDART KALIPLAR
-    if label == "Trendyol": return f"https://www.trendyol.com/p-{val}"
-    if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
-    if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
-    if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
+    # 3. STANDART KALIPLAR (Eğer hücrede sadece ID varsa)
+    if val != "":
+        if label == "Trendyol": return f"https://www.trendyol.com/p-{val}"
+        if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
+        if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
+        if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
+    
+    # 4. HİÇBİR VERİ YOKSA BARKOD ARAMASI
+    if barcode:
+        if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
+        if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
+        if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
     
     return None
 
@@ -104,14 +112,14 @@ def load_and_merge_data():
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
-        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_id)
+        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
 
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
             
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
-            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_id)
+            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             
             # --- AKSİYON (AKAKÇE) İÇİN EXCEL'DEKİ GİZLİ KÖPRÜLERİ ÇEKME ---
             wb = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
@@ -124,12 +132,11 @@ def load_and_merge_data():
             ext_links = {}
             if idx_bc is not None and idx_br is not None:
                 for r in range(2, ws.max_row + 1):
-                    bc_val = clean_id(ws.cell(row=r, column=idx_bc+1).value)
+                    bc_val = clean_val(ws.cell(row=r, column=idx_bc+1).value)
                     b_cell = ws.cell(row=r, column=idx_br+1)
                     if bc_val and b_cell.hyperlink:
                         ext_links[bc_val] = b_cell.hyperlink.target
             
-            # Gizli Akakçe linklerini ana tabloya "Hidden_Link" olarak ekle
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             # -----------------------------------------------------------------
             
