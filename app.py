@@ -17,7 +17,7 @@ MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
 # --- PLATFORM ANA LİNKLERİ ---
 PLATFORM_LINKS = {
-    "Aksiyon": "https://www.akakce.com/hesabim/listelerim/detay/?l=5291190",
+    "Aksiyon": "https://www.akakce.com",
     "Braun Shop": "https://www.braunshop.com.tr",
     "Media Markt": "https://www.mediamarkt.com.tr/tr/category/kisisel-bakim-465820.html?brand=ORAL%20B%20OR%20BRAUN%20OR%20REVLON&marketplace=MediaMarkt&sort=availability+asc",
     "Teknosa": "https://www.teknosa.com/kisisel-bakim-c-118?s=%3Arelevance%3Aseller%3Ateknosa%3Abrand%3A2734%3Abrand%3A275%3Abrand%3A2426&text=",
