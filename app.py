@@ -10,7 +10,7 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
-st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Aksiyon Raporu", page_icon="⚖️", layout="wide")
 
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
@@ -269,7 +269,7 @@ def display_styled_table(df, mapping):
 
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
-with col_title: st.title("📊 Fiyat Analiz Merkezi")
+with col_title: st.title("📊 Aksiyon Raporu")
 update_text = ""
 try: 
     res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
