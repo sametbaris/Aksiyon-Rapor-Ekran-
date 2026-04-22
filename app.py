@@ -59,36 +59,36 @@ def parse_price(val):
     try: return float(clean)
     except: return None
 
-# ================= AKILLI LİNK MOTORU (SİHİR BURADA) =================
-def build_smart_link(label, raw_id, row, mapping):
+# ================= AKILLI LİNK MOTORU =================
+def build_smart_link(label, raw_id, row):
     val = clean_id(raw_id)
     if val.startswith("http"): return val
     
     barcode = clean_id(row.get("Barkod_Int", ""))
-    uk_col = mapping.get("Ürün Kodu")
-    urun_kodu = str(row.get(uk_col, "")).strip() if uk_col else ""
 
-    # 1. Braun Shop (Excel'den çalınan gizli link veya Arama Fallback)
-    if label == "Braun Shop":
-        ext_link = row.get("Ext_BS_Link")
-        if pd.notna(ext_link) and str(ext_link).startswith("http"): 
-            return str(ext_link)
-        if urun_kodu: 
-            return f"https://www.braunshop.com.tr/arama?q={urun_kodu}"
-        return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
-
-    # 2. Aksiyon (Akakçe Barkod Araması - En güvenilir yol)
+    # 1. AKSİYON (Akakçe) - Gizli linki kullanır, yoksa CSS koduyla arama yapar
     if label == "Aksiyon":
+        hidden_link = row.get("Hidden_Link")
+        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
+            return str(hidden_link)
+        if val: 
+            return f"https://www.akakce.com/arama/?q={val}"
         return f"https://www.akakce.com/arama/?q={barcode}" if barcode else None
 
-    # 3. Link Yoksa Barkod Taraması
+    # 2. BRAUN SHOP - Sadece BS Data ID kullanır (.0 temizlenmiş şekilde)
+    if label == "Braun Shop":
+        if val: 
+            return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
+        return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
+
+    # 3. LİNK YOKSA BARKOD TARAMASI
     if val == "":
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}" if barcode else None
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}" if barcode else None
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/" if barcode else None
         return None
 
-    # 4. Standart Kalıplar
+    # 4. STANDART KALIPLAR
     if label == "Trendyol": return f"https://www.trendyol.com/p-{val}"
     if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
     if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
@@ -113,7 +113,7 @@ def load_and_merge_data():
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
             df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_id)
             
-            # --- EXCEL'DEKİ GİZLİ KÖPRÜLERİ (HYPERLINK) ÇEKME ---
+            # --- AKSİYON (AKAKÇE) İÇİN EXCEL'DEKİ GİZLİ KÖPRÜLERİ ÇEKME ---
             wb = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws = wb.active
             headers_ex = [str(c.value).strip() if c.value else "" for c in ws[1]]
@@ -126,15 +126,14 @@ def load_and_merge_data():
                 for r in range(2, ws.max_row + 1):
                     bc_val = clean_id(ws.cell(row=r, column=idx_bc+1).value)
                     b_cell = ws.cell(row=r, column=idx_br+1)
-                    # Hücrenin arkasındaki gizli linki alıyoruz!
                     if bc_val and b_cell.hyperlink:
                         ext_links[bc_val] = b_cell.hyperlink.target
             
-            # Gizli linkleri ana tabloya sütun olarak ekle
-            df_map["Ext_BS_Link"] = df_map["Barkod_Int"].map(ext_links)
-            # ----------------------------------------------------
+            # Gizli Akakçe linklerini ana tabloya "Hidden_Link" olarak ekle
+            df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
+            # -----------------------------------------------------------------
             
-            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Ext_BS_Link"]
+            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -182,7 +181,6 @@ def display_styled_table(df):
             d_val = "" if val.lower() in ["nan", "none", ""] else val
             style = ""
             
-            # Kıyaslama
             bs_col_name = mapping.get("Braun Shop")
             if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
                 p_ref = parse_price(row[bs_col_name])
@@ -199,8 +197,7 @@ def display_styled_table(df):
             map_key = refs.get(label)
             target_id = row.get(map_key, "")
             
-            # Tüm sihri çağırdığımız yer (mapping sözlüğünü de gönderiyoruz)
-            url = build_smart_link(label, target_id, row, mapping)
+            url = build_smart_link(label, target_id, row)
 
             if url and d_val:
                 html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
