@@ -26,6 +26,7 @@ def get_base64_logo(file_name):
     return None
 
 def load_logo_pair(file_name):
+    """Siyah logoyu ve varsa _white uzantılı beyaz logoyu hafızaya alır."""
     base_name = file_name.split('.')[0]
     ext = file_name.split('.')[1]
     
@@ -36,7 +37,7 @@ def load_logo_pair(file_name):
     return {
         "light": light_logo, 
         "dark": dark_logo if has_custom_dark else light_logo,
-        "invert_dark": not has_custom_dark 
+        "invert_dark": not has_custom_dark # Beyaz resmi yoksa CSS ile otomatik beyazlatır
     }
 
 LOGOS = {
@@ -65,10 +66,10 @@ st.markdown("""
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
     
-    /* --- GÜVENLİ DARK LOGO YÖNETİMİ --- */
+    /* --- OTOMATİK GÜVENLİ TEMA YÖNETİMİ --- */
     .logo-dark { display: none; }
     
-    /* İşletim sistemi veya tarayıcı düzeyinde karanlık mod algılayıcı */
+    /* Cihazın sistem temasını dinler (Streamlit Ayarlarından "Use system setting" seçilmelidir) */
     @media (prefers-color-scheme: dark) {
         .logo-light { display: none !important; }
         .logo-dark { display: inline-block !important; }
@@ -256,6 +257,7 @@ def display_styled_table(df, mapping):
                 l_src = logo_pair["light"]
                 d_src = logo_pair["dark"]
                 
+                # Sadece siyah olan logolar karanlıkta otomatik beyazlar
                 inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
                 
                 html += f'<th><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></th>'
