@@ -329,6 +329,6 @@ if df_data is not None:
         df_data[[real for label, real in mapping.items() if real in df_data.columns]].to_excel(writer, index=False)
     with col_btn:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        st.download_button("📥 Excel", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
+        st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
 
     display_styled_table(df_data, mapping)
