@@ -10,7 +10,7 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
-st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Aksiyon Raporu", page_icon="⚖️", layout="wide")
 
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
@@ -271,7 +271,7 @@ with col_title:
             <div class="main-logo-container">
                 <img src="{l_sys}" class="main-system-logo logo-light">
                 <img src="{d_sys}" class="main-system-logo logo-dark {sys_inv}">
-                <h1 style="margin: 0;">📊 Fiyat Analiz Merkezi</h1>
+                <h1 style="margin: 0;">Aksiyon Raporu</h1>
             </div>
         """, unsafe_allow_html=True)
     else:
