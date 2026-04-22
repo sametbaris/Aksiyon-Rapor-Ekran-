@@ -196,14 +196,18 @@ def load_and_merge_data():
 
 # ================= RENDER =================
 def display_styled_table(df):
-    def find_col(name_part):
+    def find_col(name_part, exclude=None):
         for c in df.columns:
-            if name_part.lower() in c.lower(): return c
+            if name_part.lower() in c.lower():
+                if exclude and exclude.lower() in c.lower():
+                    continue
+                return c
         return None
 
+    # HATA BURADAYDI ÇÖZÜLDÜ: Kodu ararken Barkod sütununu dışladık!
     mapping = {
         "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
-        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu"),
+        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
         "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
         "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
         "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
@@ -232,7 +236,6 @@ def display_styled_table(df):
             d_val = "" if val.lower() in ["nan", "none", ""] else val
             style = ""
             
-            # --- 3 BOYUTLU RENK MANTIĞI ---
             bs_col_name = mapping.get("Braun Shop")
             if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
                 p_ref = parse_price(row[bs_col_name])
@@ -251,7 +254,6 @@ def display_styled_table(df):
                 else: 
                     style = 'background-color: var(--pill-default-bg);'
 
-            # LINK OLUSTUR
             map_key = refs.get(label)
             target_id = row.get(map_key, "")
             
@@ -270,7 +272,6 @@ st.title("📊 Fiyat Analiz Merkezi")
 df_data = load_and_merge_data()
 
 if df_data is not None:
-    # Arama ve Filtreleme UI'ı
     col_search, col_plat, col_stat = st.columns([2, 1, 1])
     with col_search:
         search = st.text_input("🔍 Ürün Adı veya Barkod Ara...")
