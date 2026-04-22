@@ -10,14 +10,14 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
-st.set_page_config(page_title="Aksiyon Raporu", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
 
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
 # --- PLATFORM ANA LİNKLERİ ---
 PLATFORM_LINKS = {
-    "Aksiyon": "https://www.akakce.com",
+    "Aksiyon": "https://www.akakce.com/hesabim/listelerim/detay/?l=5291190",
     "Braun Shop": "https://www.braunshop.com.tr",
     "Media Markt": "https://www.mediamarkt.com.tr/tr/category/kisisel-bakim-465820.html?brand=ORAL%20B%20OR%20BRAUN%20OR%20REVLON&marketplace=MediaMarkt&sort=availability+asc",
     "Teknosa": "https://www.teknosa.com/kisisel-bakim-c-118?s=%3Arelevance%3Aseller%3Ateknosa%3Abrand%3A2734%3Abrand%3A275%3Abrand%3A2426&text=",
@@ -43,6 +43,9 @@ def load_logo_pair(file_name):
     l_logo = get_base64_logo(file_name)
     d_logo = get_base64_logo(f"{base_name}_white.{ext}")
     return {"light": l_logo, "dark": d_logo if d_logo else l_logo, "invert_dark": not d_logo}
+
+# Tüm logoları ve Sistem logosunu yüklüyoruz
+SYSTEM_LOGO = load_logo_pair("sistem.png")
 
 LOGOS = {
     "Aksiyon": load_logo_pair("akakce.png"),
@@ -88,6 +91,8 @@ components.html(
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
+    .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+    .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 8px; font-family: 'Inter', sans-serif; border: none; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
@@ -218,35 +223,24 @@ def load_and_merge_data():
 # ================= RENDER =================
 def display_styled_table(df, mapping):
     refs = { "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ" }
-    
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for label, real in mapping.items():
         if real:
             logo_pair = LOGOS.get(label)
-            plat_url = PLATFORM_LINKS.get(label) # Platform ana linkini al
-            
+            plat_url = PLATFORM_LINKS.get(label)
             if logo_pair and logo_pair["light"]:
-                l_src = logo_pair["light"]
-                d_src = logo_pair["dark"]
+                l_src = logo_pair["light"]; d_src = logo_pair["dark"]
                 inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
-                
-                # Başlıktaki Logoyu Tıklanabilir Yap (Eğer URL varsa)
-                if plat_url:
-                    content = f'<a href="{plat_url}" target="_blank" style="text-decoration:none;"><img src="{l_src}" class="header-logo logo-light" title="{label} (Mağaza Git)"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label} (Mağaza Git)"></a>'
-                else:
-                    content = f'<img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}">'
+                if plat_url: content = f'<a href="{plat_url}" target="_blank" style="text-decoration:none;"><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></a>'
+                else: content = f'<img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}">'
                 html += f'<th>{content}</th>'
-            else:
-                html += f'<th>{label}</th>'
+            else: html += f'<th>{label}</th>'
     html += '</tr></thead><tbody>'
-
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
             if not real: continue
-            val = str(row[real])
-            d_val = "" if val.lower() in ["nan", "none", ""] else val
-            style = ""
+            val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
             if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
                 p_ref = parse_price(row[bs_col_name]); p_curr = parse_price(d_val)
@@ -257,19 +251,32 @@ def display_styled_table(df, mapping):
             if not style and d_val:
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
-            
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
-            if url and d_val:
-                html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
-            else:
-                html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
+            if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
+            else: html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
         html += '</tr>'
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
-with col_title: st.title("📊 Aksiyon Raporu")
+
+with col_title:
+    # --- SİSTEM LOGOSU VE BAŞLIK ---
+    if SYSTEM_LOGO["light"]:
+        l_sys = SYSTEM_LOGO["light"]
+        d_sys = SYSTEM_LOGO["dark"]
+        sys_inv = "invert-logo" if SYSTEM_LOGO["invert_dark"] else ""
+        st.markdown(f"""
+            <div class="main-logo-container">
+                <img src="{l_sys}" class="main-system-logo logo-light">
+                <img src="{d_sys}" class="main-system-logo logo-dark {sys_inv}">
+                <h1 style="margin: 0;">📊 Fiyat Analiz Merkezi</h1>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.title("📊 Fiyat Analiz Merkezi")
+
 update_text = ""
 try: 
     res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
