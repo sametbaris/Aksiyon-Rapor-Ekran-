@@ -293,15 +293,19 @@ df_data = load_and_merge_data()
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     
-    # Alt Grup Verilerini Dinamik Olarak Çekme
+    # --- ALT GRUP LİSTESİ (Tablodaki Orijinal Sıraya Göre) ---
     alt_grup_col = mapping.get("Alt Grup")
     if alt_grup_col and alt_grup_col in df_data.columns:
-        gruplar = [str(x).strip() for x in df_data[alt_grup_col].dropna().unique() if str(x).strip() != ""]
-        unique_gruplar = ["Tümü"] + sorted(list(set(gruplar)))
+        gruplar = []
+        for x in df_data[alt_grup_col].dropna():
+            val = str(x).strip()
+            if val != "" and val not in gruplar:
+                gruplar.append(val)
+        unique_gruplar = ["Tümü"] + gruplar
     else:
         unique_gruplar = ["Tümü"]
+    # ---------------------------------------------------------
 
-    # 5 Sütunlu Arama ve Filtreler Yapısı
     col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
     
     with col_search:
@@ -313,15 +317,12 @@ if df_data is not None:
     with col_stat:
         filter_status = st.selectbox("🎨 Fiyat Rengi", ["Tümü", "🔴 Kırmızı (Daha Ucuz)", "🟢 Yeşil (Aynı Fiyat)", "🟡 Sarı (Daha Pahalı)"])
 
-    # 1. Metin / Barkod Arama Filtresi
     if search:
         df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
 
-    # 2. Alt Grup Filtresi
     if filter_grup != "Tümü" and alt_grup_col:
         df_data = df_data[df_data[alt_grup_col].astype(str).str.strip() == filter_grup]
 
-    # 3. Renk ve Platform Filtresi
     if filter_status != "Tümü":
         bs_col = mapping.get("Braun Shop")
         if bs_col:
@@ -364,5 +365,4 @@ if df_data is not None:
             use_container_width=True
         )
 
-    # Tabloyu Çiz
     display_styled_table(df_data, mapping)
