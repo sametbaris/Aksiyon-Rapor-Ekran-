@@ -6,6 +6,7 @@ import base64
 import os
 import io
 import openpyxl
+from datetime import datetime
 
 # ================= SAYFA AYARLARI =================
 st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout="wide")
@@ -47,6 +48,7 @@ st.markdown("""
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     .data-pill:hover { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
+    .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     /* İndirme Butonu Stili */
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
 </style>
@@ -72,7 +74,6 @@ def parse_price(val):
         return None
 
 def get_column_mapping(df):
-    """Ekranda gösterilecek ve Excel'e indirilecek ana kolonları bulur."""
     def find_col(name_part, exclude=None):
         for c in df.columns:
             if name_part.lower() in c.lower():
@@ -272,11 +273,26 @@ def display_styled_table(df, mapping):
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
 # ================= MAIN =================
-st.title("📊 Fiyat Analiz Merkezi")
+col_title, col_update = st.columns([3, 1])
+with col_title:
+    st.title("📊 Fiyat Analiz Merkezi")
+
+# Son Güncelleme Verisini Çekme (Sağ Üst Rozet)
+update_text = ""
+try: 
+    res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
+    update_text = res.text.replace('"', '').strip()
+except: 
+    pass
+
+with col_update:
+    if update_text:
+        st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
+
 df_data = load_and_merge_data()
 
 if df_data is not None:
-    # --- ÜST PANEL (Arama, Filtreler ve İndir Butonu) ---
+    # Arama ve Filtreler
     col_search, col_plat, col_stat, col_btn = st.columns([3, 2, 2, 2])
     with col_search:
         search = st.text_input("🔍 Ürün Adı veya Barkod Ara...")
@@ -315,6 +331,10 @@ if df_data is not None:
     export_cols = [real for label, real in mapping.items() if real in df_data.columns]
     df_export = df_data[export_cols].copy()
     
+    # Dinamik Dosya İsmi (O Anki Tarih ve Saat ile)
+    current_time_str = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_export.to_excel(writer, index=False)
@@ -324,10 +344,10 @@ if df_data is not None:
         st.download_button(
             label="📥 Excel İndir", 
             data=output.getvalue(), 
-            file_name="Fiyat_Analiz_Raporu.xlsx", 
+            file_name=excel_filename, 
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
             use_container_width=True
         )
 
-    # --- TABLOYU ÇİZ ---
+    # Tabloyu Çiz
     display_styled_table(df_data, mapping)
