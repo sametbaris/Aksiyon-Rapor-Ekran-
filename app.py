@@ -4,6 +4,7 @@ import re
 import requests
 import base64
 import os
+import io
 import openpyxl
 
 # ================= SAYFA AYARLARI =================
@@ -49,12 +50,9 @@ st.markdown("""
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
-    """URL'leri bozmadan sadece ID'lerin sonundaki .0 kalıntısını siler."""
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
-    # Web adresi ise dokunmadan geri ver
     if v.startswith("http"): return v
-    # Değilse (yani ID ise) Pandas'ın eklediği .0 kısmını kesip at
     return v.split('.')[0]
 
 def parse_price(val):
@@ -69,28 +67,29 @@ def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
 
-    # 1. AKSİYON (Akakçe) -> Excel'deki gizli köprüden çeker
+    # 1. AKSİYON (Akakçe) - Excel'deki gizli linki kullanır
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
             return str(hidden_link)
-        if val: 
-            return f"https://www.akakce.com/arama/?q={val}"
+        if val: return f"https://www.akakce.com/arama/?q={val}"
         return f"https://www.akakce.com/arama/?q={barcode}" if barcode else None
 
-    # Zaten tam bir URL ise onu döndür (Vatan, Amazon vb. için koruma)
+    # Zaten URL ise dokunma (Amazon, Hepsiburada koruması)
     if val.startswith("http"): 
         return val
 
-    # 2. BRAUN SHOP
+    # 2. BRAUN SHOP (MUCİZE BURADA!) -> Google Sheets'ten kazınan Gerçek SEO Linki
     if label == "Braun Shop":
-        if val: 
-            return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
+        gs_link = row.get("GS_BS_Link")
+        if pd.notna(gs_link) and str(gs_link).startswith("http"):
+            return str(gs_link)
+        # Fallback (Eğer link yoksa ID ile dener)
+        if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         return f"https://www.braunshop.com.tr/arama?q={barcode}" if barcode else None
 
-    # 3. STANDART KALIPLAR
+    # 3. DİĞER PLATFORMLAR (Bozulmayan, doğru çalışan kalıplar)
     if val != "":
-        # Trendyol orijinal/doğru link yapısına çevrildi!
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
@@ -106,14 +105,47 @@ def build_smart_link(label, raw_id, row):
 
 @st.cache_data(ttl=60)
 def load_and_merge_data():
-    fiyat_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Guncel&range=A:M"
+    fiyat_url_csv = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Guncel&range=A:M"
+    fiyat_url_xlsx = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx&sheet=Guncel"
+    
     try:
-        df_fiyat = pd.read_csv(fiyat_url, dtype=str)
+        # ANA VERİYİ ÇEK
+        df_fiyat = pd.read_csv(fiyat_url_csv, dtype=str)
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
 
+        # GOOGLE SHEETS'TEN GİZLİ LİNKLERİ ÇEK (BRAUN SHOP İÇİN)
+        gsheet_bs_links = {}
+        try:
+            r = requests.get(fiyat_url_xlsx)
+            wb_gs = openpyxl.load_workbook(io.BytesIO(r.content), data_only=False)
+            ws_gs = wb_gs.active
+            headers_gs = [str(c.value).strip() if c.value else "" for c in ws_gs[1]]
+            
+            idx_bc_gs = next((i for i, h in enumerate(headers_gs) if "barkod" in h.lower()), None)
+            idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
+            
+            if idx_bc_gs is not None and idx_bs_gs is not None:
+                for r_idx in range(2, ws_gs.max_row + 1):
+                    bc_val = clean_val(ws_gs.cell(row=r_idx, column=idx_bc_gs+1).value)
+                    bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1)
+                    
+                    url = None
+                    if bs_cell.hyperlink:
+                        url = bs_cell.hyperlink.target
+                    elif isinstance(bs_cell.value, str) and '=HYPERLINK' in bs_cell.value.upper():
+                        match = re.search(r'=HYPERLINK\("([^"]+)"', bs_cell.value, re.IGNORECASE)
+                        if match: url = match.group(1)
+                        
+                    if bc_val and url:
+                        gsheet_bs_links[bc_val] = url
+        except: pass
+        
+        df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
+
+        # MAPPING DOSYASINDAN BİLGİLERİ AL
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -121,24 +153,23 @@ def load_and_merge_data():
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
             df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             
-            # --- AKSİYON (AKAKÇE) GİZLİ KÖPRÜLERİNİ ÇEKME ---
-            wb = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
-            ws = wb.active
-            headers_ex = [str(c.value).strip() if c.value else "" for c in ws[1]]
+            # Aksiyon (Akakçe) Gizli Linklerini Al
+            wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
+            ws_map = wb_map.active
+            headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
             
-            idx_bc = next((i for i, h in enumerate(headers_ex) if "barkod" in h.lower()), None)
-            idx_br = next((i for i, h in enumerate(headers_ex) if "braun" in h.lower() and "kodu" in h.lower()), None)
+            idx_bc_map = next((i for i, h in enumerate(headers_map) if "barkod" in h.lower()), None)
+            idx_br_map = next((i for i, h in enumerate(headers_map) if "braun" in h.lower() and "kodu" in h.lower()), None)
             
             ext_links = {}
-            if idx_bc is not None and idx_br is not None:
-                for r in range(2, ws.max_row + 1):
-                    bc_val = clean_val(ws.cell(row=r, column=idx_bc+1).value)
-                    b_cell = ws.cell(row=r, column=idx_br+1)
+            if idx_bc_map is not None and idx_br_map is not None:
+                for r_idx in range(2, ws_map.max_row + 1):
+                    bc_val = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
+                    b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
                     if bc_val and b_cell.hyperlink:
                         ext_links[bc_val] = b_cell.hyperlink.target
             
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
-            # -----------------------------------------------------------------
             
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
