@@ -14,7 +14,7 @@ st.set_page_config(page_title="Fiyat Analiz Merkezi", page_icon="⚖️", layout
 SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
-# ================= LOGO YÜKLEME =================
+# ================= AKILLI LOGO YÜKLEME =================
 def get_base64_logo(file_name):
     file_path = os.path.join("logos", file_name)
     if os.path.exists(file_path):
@@ -25,15 +25,27 @@ def get_base64_logo(file_name):
             return None
     return None
 
+def load_logo_pair(file_name):
+    """Dark/Light mode için logoları çift olarak yükler."""
+    base_name = file_name.split('.')[0]
+    ext = file_name.split('.')[1]
+    
+    light_logo = get_base64_logo(file_name)
+    # Beyaz logonun adı (örn: amazon_white.png) aranır
+    dark_logo = get_base64_logo(f"{base_name}_white.{ext}")
+    
+    # Eğer beyaz logo yoksa, hata vermemesi için orijinalini kullanır
+    return {"light": light_logo, "dark": dark_logo if dark_logo else light_logo}
+
 LOGOS = {
-    "Aksiyon": get_base64_logo("akakce.png"),
-    "Media Markt": get_base64_logo("mediamarkt.png"),
-    "Teknosa": get_base64_logo("teknosa.png"),
-    "Vatan": get_base64_logo("vatan.png"),
-    "Trendyol": get_base64_logo("trendyol.png"),
-    "Hepsiburada": get_base64_logo("hepsiburada.png"),
-    "Amazon": get_base64_logo("amazon.png"),
-    "Braun Shop": get_base64_logo("braunshop.png")
+    "Aksiyon": load_logo_pair("akakce.png"),
+    "Media Markt": load_logo_pair("mediamarkt.png"),
+    "Teknosa": load_logo_pair("teknosa.png"),
+    "Vatan": load_logo_pair("vatan.png"),
+    "Trendyol": load_logo_pair("trendyol.png"),
+    "Hepsiburada": load_logo_pair("hepsiburada.png"),
+    "Amazon": load_logo_pair("amazon.png"),
+    "Braun Shop": load_logo_pair("braunshop.png")
 }
 
 # ================= CSS =================
@@ -49,8 +61,14 @@ st.markdown("""
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     .data-pill:hover { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
-    /* İndirme Butonu Stili */
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
+    
+    /* --- DARK MODE LOGO SİHRİ --- */
+    .logo-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+        .logo-light { display: none !important; }
+        .logo-dark { display: inline-block !important; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -228,8 +246,14 @@ def display_styled_table(df, mapping):
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     for label, real in mapping.items():
         if real:
-            logo = LOGOS.get(label)
-            html += f'<th><img src="{logo}" class="header-logo"></th>' if logo else f'<th>{label}</th>'
+            logo_pair = LOGOS.get(label)
+            if logo_pair and logo_pair["light"]:
+                # Hem Light Hem Dark Logoyu HTML içine gömüyoruz, CSS hangisini göstereceğini seçiyor
+                l_src = logo_pair["light"]
+                d_src = logo_pair["dark"]
+                html += f'<th><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark" title="{label}"></th>'
+            else:
+                html += f'<th>{label}</th>'
     html += '</tr></thead><tbody>'
 
     for _, row in df.iterrows():
@@ -293,7 +317,6 @@ df_data = load_and_merge_data()
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     
-    # --- ALT GRUP LİSTESİ (Tablodaki Orijinal Sıraya Göre) ---
     alt_grup_col = mapping.get("Alt Grup")
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
@@ -304,7 +327,6 @@ if df_data is not None:
         unique_gruplar = ["Tümü"] + gruplar
     else:
         unique_gruplar = ["Tümü"]
-    # ---------------------------------------------------------
 
     col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
     
