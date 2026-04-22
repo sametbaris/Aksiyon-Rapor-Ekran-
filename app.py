@@ -69,4 +69,4 @@ def build_smart_link(label, raw_id, row):
 
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
-        if pd.notna(hidden_link) and str(hidden_link).startswith("http"):
+    if pd.notna(hidden_link) and str(hidden_link).startswith("http"):
