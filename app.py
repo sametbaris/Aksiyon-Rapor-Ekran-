@@ -356,14 +356,8 @@ with col_title:
     # Sayfaya girenleri kontrol et
     online_users = track_user_presence()
     
-    # Online gösterge HTML'i
-    online_badge = f"""
-    <div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
-                padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;">
-        <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span>
-        <span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span>
-    </div>
-    """
+    # YENİLENEN KISIM: HTML kodunu tek satıra indirdik ki Streamlit kafasını karıştırmasın
+    online_badge = f'<div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
