@@ -20,7 +20,7 @@ st.set_page_config(
     layout="wide"
 )
 
-SHEET_ID = "17zVRiwyUYaaEAqyzNx0u7aMMncdgH81vrKbzqS9MHB4"
+SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
 # --- PLATFORM ANA LİNKLERİ ---
@@ -133,7 +133,7 @@ def get_gspread_client():
     except Exception:
         return None
 
-# ================= ZİYARETÇİ TAKİP MOTORU =================
+# ================= ZİYARETÇİ TAKİP MOTORU (GMT+3 AYARLI) =================
 @st.cache_data(ttl=60)
 def get_online_count():
     client = get_gspread_client()
@@ -144,7 +144,10 @@ def get_online_count():
         all_logs = log_sheet.get_all_records()
         
         online_count = 0
-        two_minutes_ago = datetime.now() - timedelta(minutes=2)
+        # GMT+3 Türkiye saati
+        tr_now = datetime.utcnow() + timedelta(hours=3)
+        two_minutes_ago = tr_now - timedelta(minutes=2)
+        
         for record in all_logs:
             try:
                 last_seen = datetime.strptime(str(record.get('Son_Gorulme', '')), "%Y-%m-%d %H:%M:%S")
@@ -160,7 +163,8 @@ def track_user_presence():
         st.session_state.user_id = str(uuid.uuid4())[:8]
         st.session_state.last_ping = None
         
-    now = datetime.now()
+    # GMT+3 Türkiye saati
+    now = datetime.utcnow() + timedelta(hours=3)
     client = get_gspread_client()
     
     if client and (st.session_state.last_ping is None or (now - st.session_state.last_ping).total_seconds() > 60):
@@ -353,20 +357,17 @@ def display_styled_table(df, mapping):
 col_title, col_update = st.columns([3, 1])
 
 with col_title:
-    # Sayfaya girenleri kontrol et
     online_users = track_user_presence()
     
-    # YENİLENEN KISIM: HTML kodunu tek satıra indirdik ki Streamlit kafasını karıştırmasın
+    # HTML kodunu tek satırda tutuyoruz ki Streamlit yanlış renderlamasın
     online_badge = f'<div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
-        d_sys = SYSTEM_LOGO["dark"]
-        sys_inv = "invert-logo" if SYSTEM_LOGO["invert_dark"] else ""
+        # Sistem logosu için karanlık tema ayrımını kaldırdık, her zaman orijinal (light) kalacak.
         st.markdown(f"""
             <div class="main-logo-container">
-                <img src="{l_sys}" class="main-system-logo logo-light">
-                <img src="{d_sys}" class="main-system-logo logo-dark {sys_inv}">
+                <img src="{l_sys}" class="main-system-logo">
                 <h1 style="margin: 0; display: inline-block;">Aksiyon Raporu</h1>
                 {online_badge}
             </div>
@@ -419,8 +420,11 @@ if df_data is not None:
                 return False
             df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    current_time_str = datetime.now().strftime("%d-%m-%Y_%H-%M")
+    # EXCEL İNDİRME İÇİN SAAT GMT+3 TÜRKİYE SAATİNE AYARLANDI
+    tr_time_now = datetime.utcnow() + timedelta(hours=3)
+    current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
+    
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_data[[real for label, real in mapping.items() if real in df_data.columns]].to_excel(writer, index=False)
