@@ -20,7 +20,7 @@ st.set_page_config(
     layout="wide"
 )
 
-SHEET_ID = "1So1V2L7NLT-xow8VEwGeogR2Ot7lDhhJUpG_cNSLTC0"
+SHEET_ID = "17zVRiwyUYaaEAqyzNx0u7aMMncdgH81vrKbzqS9MHB4"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
 
 # --- PLATFORM ANA LİNKLERİ ---
