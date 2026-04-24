@@ -12,7 +12,12 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
-st.set_page_config(page_title="Aksiyon Raporu", page_icon="⚖️", layout="wide")
+icon_path = os.path.join("logos", "sistem.png")
+st.set_page_config(
+    page_title="Aksiyon Raporu", 
+    page_icon=icon_path if os.path.exists(icon_path) else "📊", 
+    layout="wide"
+)
 
 SHEET_ID = "17zVRiwyUYaaEAqyzNx0u7aMMncdgH81vrKbzqS9MHB4"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
