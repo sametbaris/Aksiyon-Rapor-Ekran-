@@ -109,7 +109,6 @@ st.markdown("""
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     
-    /* SADECE LİNKİ OLAN HÜCRELER HOVER'DA BÜYÜR */
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
@@ -412,28 +411,56 @@ if df_data is not None:
                 return False
             df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    # ================= EXCEL İNDİRME & SAYI FORMATI DÜZELTME =================
+    # ================= EXCEL İNDİRME VE FORMATLAMA =================
     tr_time_now = datetime.utcnow() + timedelta(hours=3)
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
-    excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
+    excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
-    # 1. İndirilecek sütunları seç
     export_cols = [real for label, real in mapping.items() if real in df_data.columns]
     df_export = df_data[export_cols].copy()
     
-    # 2. Excel uyarısını önlemek için sadece platformlardaki "Fiyat" sayılarını gerçek sayılara (float) dönüştür.
-    # Barkodlar ve kodlar 0'la başlayabildiği için string olarak korunur.
+    # 1. Fiyatları sayıya çevir
     price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
-    for plat in price_platforms:
-        col_name = mapping.get(plat)
-        if col_name and col_name in df_export.columns:
-            df_export[col_name] = df_export[col_name].apply(parse_price)
+    price_cols = [mapping.get(p) for p in price_platforms if mapping.get(p) in df_export.columns]
+    for col_name in price_cols:
+        df_export[col_name] = df_export[col_name].apply(parse_price)
+        
+    # 2. Barkod sütununu sayıya çevir (varsa)
+    barcode_col = mapping.get("Barkod")
+    if barcode_col and barcode_col in df_export.columns:
+        def parse_barcode(v):
+            try: return int(float(str(v).replace(' ', '')))
+            except: return v
+        df_export[barcode_col] = df_export[barcode_col].apply(parse_barcode)
     
-    # 3. Excel oluştur
+    # 3. Excel oluştur ve hücre biçimlerini ayarla (Openpyxl)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_export.to_excel(writer, index=False)
+        df_export.to_excel(writer, index=False, sheet_name='Aksiyon_Raporu')
         
+        workbook = writer.book
+        worksheet = writer.sheets['Aksiyon_Raporu']
+        
+        # Sütunları dolaşıp tek tek hücre formatlarını ve genişliklerini düzeltiyoruz
+        for idx, col_name in enumerate(df_export.columns):
+            excel_col_idx = idx + 1
+            col_letter = openpyxl.utils.get_column_letter(excel_col_idx)
+            
+            if col_name in price_cols:
+                worksheet.column_dimensions[col_letter].width = 12
+                for row in range(2, len(df_export) + 2):
+                    # #,##0.00 Excel'de binlik ayraçlı ve 2 virgüllü (1.234,56) formatını tetikler
+                    worksheet.cell(row=row, column=excel_col_idx).number_format = '#,##0.00'
+                    
+            elif col_name == barcode_col:
+                worksheet.column_dimensions[col_letter].width = 16
+                for row in range(2, len(df_export) + 2):
+                    # Sadece 0 yazmak ondalıksız saf sayıyı verir (örn: 421020102030)
+                    worksheet.cell(row=row, column=excel_col_idx).number_format = '0'
+            else:
+                # Diğer sütunlara biraz nefes aldırıyoruz
+                worksheet.column_dimensions[col_letter].width = 15
+                
     with col_btn:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
