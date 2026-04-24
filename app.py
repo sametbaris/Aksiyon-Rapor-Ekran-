@@ -6,16 +6,17 @@ import base64
 import os
 import io
 import openpyxl
-import gspread  # GİZLİ BAĞLANTI İÇİN GERİ GELDİ
-from google.oauth2.service_account import Credentials  # GİZLİ BAĞLANTI İÇİN GERİ GELDİ
-from datetime import datetime
+import gspread
+import uuid
+from google.oauth2.service_account import Credentials
+from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 
 # ================= SAYFA AYARLARI =================
 icon_path = os.path.join("logos", "sistem.png")
 st.set_page_config(
     page_title="Aksiyon Raporu", 
-    page_icon=icon_path if os.path.exists(icon_path) else "📊", 
+    page_icon=icon_path if os.path.exists(icon_path) else "⚖️", 
     layout="wide"
 )
 
@@ -51,7 +52,6 @@ def load_logo_pair(file_name):
     d_logo = get_base64_logo(f"{base_name}_white.{ext}")
     return {"light": l_logo, "dark": d_logo if d_logo else l_logo, "invert_dark": not d_logo}
 
-# Tüm logoları ve Sistem logosunu yüklüyoruz
 SYSTEM_LOGO = load_logo_pair("sistem.png")
 
 LOGOS = {
@@ -109,7 +109,7 @@ st.markdown("""
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     
-    /* YENİ EKLENEN KISIM: Hover (büyüme) efekti SADECE linki olan hücrelere (.data-link) uygulanır */
+    /* SADECE LİNKİ OLAN HÜCRELER HOVER'DA BÜYÜR */
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
@@ -117,6 +117,66 @@ st.markdown("""
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
+
+# ================= GSPREAD KİMLİK DOĞRULAMA =================
+@st.cache_resource
+def get_gspread_client():
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    try:
+        if "gcp_service_account" in st.secrets:
+            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        elif os.path.exists("service_account.json"):
+            creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
+        else:
+            return None
+        return gspread.authorize(creds)
+    except Exception:
+        return None
+
+# ================= ZİYARETÇİ TAKİP MOTORU =================
+@st.cache_data(ttl=60)
+def get_online_count():
+    client = get_gspread_client()
+    if not client: return 1
+    try:
+        sh = client.open_by_key(SHEET_ID)
+        log_sheet = sh.worksheet("Ziyaretci_Log")
+        all_logs = log_sheet.get_all_records()
+        
+        online_count = 0
+        two_minutes_ago = datetime.now() - timedelta(minutes=2)
+        for record in all_logs:
+            try:
+                last_seen = datetime.strptime(str(record.get('Son_Gorulme', '')), "%Y-%m-%d %H:%M:%S")
+                if last_seen > two_minutes_ago:
+                    online_count += 1
+            except: pass
+        return max(1, online_count)
+    except: return 1
+
+def track_user_presence():
+    """Sayfa açıldığında kullanıcıyı kaydeder, API'yi yormamak için 60sn'de bir günceller"""
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = str(uuid.uuid4())[:8]
+        st.session_state.last_ping = None
+        
+    now = datetime.now()
+    client = get_gspread_client()
+    
+    if client and (st.session_state.last_ping is None or (now - st.session_state.last_ping).total_seconds() > 60):
+        try:
+            sh = client.open_by_key(SHEET_ID)
+            log_sheet = sh.worksheet("Ziyaretci_Log")
+            now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+            cell = log_sheet.find(st.session_state.user_id)
+            if cell:
+                log_sheet.update_cell(cell.row, 2, now_str)
+            else:
+                log_sheet.append_row([st.session_state.user_id, now_str])
+            st.session_state.last_ping = now
+        except: pass
+        
+    return get_online_count()
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
@@ -149,7 +209,6 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
-# ================= AKILLI LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
@@ -177,36 +236,24 @@ def build_smart_link(label, raw_id, row):
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
     return None
 
-# ================= GİZLİ BAĞLANTI (GSPREAD & SECRETS) =================
+# ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
 @st.cache_data(ttl=900)  # 15 Dakikada bir güncellenir
 def load_and_merge_data():
-    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    try:
-        # 1. JSON YETKİLENDİRMESİ (SECRETS ÜZERİNDEN)
-        if "gcp_service_account" in st.secrets:
-            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-        elif os.path.exists("service_account.json"):
-            # Lokal test için dosyayı da destekliyor
-            creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
-        else:
-            st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
-            return None, ""
+    client = get_gspread_client()
+    if not client:
+        st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
+        return None, ""
 
-        # Gspread yetkilendirmesi
-        client = gspread.authorize(creds)
-        
-        # 2. KAPALI DOSYAYI ÇEK
+    try:
         sh = client.open_by_key(SHEET_ID)
         worksheet = sh.worksheet("Guncel")
         
-        # N1 Son Güncelleme metnini oku
         update_text = ""
         try:
             update_text = worksheet.acell("N1").value
             update_text = str(update_text).replace('"', '').strip()
         except: pass
 
-        # Tüm hücreleri alıp DataFrame'e aktar
         data = worksheet.get_all_values()
         if not data: return None, update_text
             
@@ -215,7 +262,6 @@ def load_and_merge_data():
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
         
-        # 3. KİMLİK DOĞRULAMALI EXCEL İNDİRME (Hiperlinkleri Okumak İçin)
         gsheet_bs_links = {}
         try:
             export_data = client.export(SHEET_ID, format='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -231,12 +277,10 @@ def load_and_merge_data():
                     bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1)
                     url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
                     if bc_val and url: gsheet_bs_links[bc_val] = url
-        except Exception as e: 
-            print(f"Hyperlink çekme hatası: {e}")
+        except Exception as e: pass
             
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         
-        # 4. YEREL MAPPING DOSYASI İLE BİRLEŞTİRME
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -262,10 +306,10 @@ def load_and_merge_data():
         return df_fiyat.fillna(""), update_text
         
     except Exception as e:
-        st.error(f"Kimlik doğrulama veya bağlantı hatası: {e}")
+        st.error(f"Google bağlantı hatası: {e}")
         return None, ""
 
-# ================= RENDER =================
+# ================= RENDER TABLO =================
 def display_styled_table(df, mapping):
     refs = { "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ" }
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
@@ -298,6 +342,8 @@ def display_styled_table(df, mapping):
                 else: style = 'background-color: var(--pill-default-bg);'
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
+            
+            # Linki olan hücrelere class ekleniyor (büyümesi için)
             if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
             else: html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
         html += '</tr>'
@@ -307,7 +353,18 @@ def display_styled_table(df, mapping):
 col_title, col_update = st.columns([3, 1])
 
 with col_title:
-    # --- SİSTEM LOGOSU VE BAŞLIK ---
+    # Sayfaya girenleri kontrol et
+    online_users = track_user_presence()
+    
+    # Online gösterge HTML'i
+    online_badge = f"""
+    <div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
+                padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;">
+        <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span>
+        <span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span>
+    </div>
+    """
+
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
         d_sys = SYSTEM_LOGO["dark"]
@@ -316,11 +373,12 @@ with col_title:
             <div class="main-logo-container">
                 <img src="{l_sys}" class="main-system-logo logo-light">
                 <img src="{d_sys}" class="main-system-logo logo-dark {sys_inv}">
-                <h1 style="margin: 0;">Aksiyon Raporu</h1>
+                <h1 style="margin: 0; display: inline-block;">Aksiyon Raporu</h1>
+                {online_badge}
             </div>
         """, unsafe_allow_html=True)
     else:
-        st.title("📊 Aksiyon Raporu")
+        st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0;">📊 Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
 
 # Veri Çekme Motorunu Çalıştır
 res = load_and_merge_data()
