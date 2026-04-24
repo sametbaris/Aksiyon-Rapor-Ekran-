@@ -133,7 +133,7 @@ def get_gspread_client():
     except Exception:
         return None
 
-# ================= ZİYARETÇİ TAKİP MOTORU (GMT+3 AYARLI) =================
+# ================= ZİYARETÇİ TAKİP MOTORU =================
 @st.cache_data(ttl=60)
 def get_online_count():
     client = get_gspread_client()
@@ -144,7 +144,6 @@ def get_online_count():
         all_logs = log_sheet.get_all_records()
         
         online_count = 0
-        # GMT+3 Türkiye saati
         tr_now = datetime.utcnow() + timedelta(hours=3)
         two_minutes_ago = tr_now - timedelta(minutes=2)
         
@@ -158,12 +157,10 @@ def get_online_count():
     except: return 1
 
 def track_user_presence():
-    """Sayfa açıldığında kullanıcıyı kaydeder, API'yi yormamak için 60sn'de bir günceller"""
     if 'user_id' not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())[:8]
         st.session_state.last_ping = None
         
-    # GMT+3 Türkiye saati
     now = datetime.utcnow() + timedelta(hours=3)
     client = get_gspread_client()
     
@@ -241,7 +238,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=900)  # 15 Dakikada bir güncellenir
+@st.cache_data(ttl=900)
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
@@ -347,7 +344,6 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # Linki olan hücrelere class ekleniyor (büyümesi için)
             if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
             else: html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
         html += '</tr>'
@@ -358,13 +354,10 @@ col_title, col_update = st.columns([3, 1])
 
 with col_title:
     online_users = track_user_presence()
-    
-    # HTML kodunu tek satırda tutuyoruz ki Streamlit yanlış renderlamasın
     online_badge = f'<div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
-        # Sistem logosu için karanlık tema ayrımını kaldırdık, her zaman orijinal (light) kalacak.
         st.markdown(f"""
             <div class="main-logo-container">
                 <img src="{l_sys}" class="main-system-logo">
@@ -375,7 +368,6 @@ with col_title:
     else:
         st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0;">📊 Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
 
-# Veri Çekme Motorunu Çalıştır
 res = load_and_merge_data()
 df_data = res[0] if res else None
 update_text = res[1] if res else ""
@@ -420,14 +412,28 @@ if df_data is not None:
                 return False
             df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    # EXCEL İNDİRME İÇİN SAAT GMT+3 TÜRKİYE SAATİNE AYARLANDI
+    # ================= EXCEL İNDİRME & SAYI FORMATI DÜZELTME =================
     tr_time_now = datetime.utcnow() + timedelta(hours=3)
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
-    excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
+    excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
     
+    # 1. İndirilecek sütunları seç
+    export_cols = [real for label, real in mapping.items() if real in df_data.columns]
+    df_export = df_data[export_cols].copy()
+    
+    # 2. Excel uyarısını önlemek için sadece platformlardaki "Fiyat" sayılarını gerçek sayılara (float) dönüştür.
+    # Barkodlar ve kodlar 0'la başlayabildiği için string olarak korunur.
+    price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    for plat in price_platforms:
+        col_name = mapping.get(plat)
+        if col_name and col_name in df_export.columns:
+            df_export[col_name] = df_export[col_name].apply(parse_price)
+    
+    # 3. Excel oluştur
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_data[[real for label, real in mapping.items() if real in df_data.columns]].to_excel(writer, index=False)
+        df_export.to_excel(writer, index=False)
+        
     with col_btn:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
