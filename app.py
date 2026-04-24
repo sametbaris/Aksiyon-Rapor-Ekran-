@@ -275,13 +275,14 @@ with col_title:
             </div>
         """, unsafe_allow_html=True)
     else:
-        st.title("📊 Fiyat Analiz Merkezi")
+        st.title("📊 Aksiyon Raporu")
 
 update_text = ""
 try: 
     res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
     update_text = res.text.replace('"', '').strip()
 except: pass
+
 with col_update:
     if update_text: st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
 
@@ -301,7 +302,7 @@ if df_data is not None:
     with col_search: search = st.text_input("🔍 Ürün Ara...")
     with col_grup: filter_grup = st.selectbox("📂 Alt Grup", unique_gruplar)
     with col_plat: filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
-    with col_stat: filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (Daha Ucuz)", "🟢 Yeşil (Aynı Fiyat)", "🟡 Sarı (Daha Pahalı)"])
+    with col_stat: filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"])
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     if filter_grup != "Tümü" and alt_grup_col: df_data = df_data[df_data[alt_grup_col].astype(str).str.strip() == filter_grup]
