@@ -6,6 +6,8 @@ import base64
 import os
 import io
 import openpyxl
+import gspread  # GİZLİ BAĞLANTI İÇİN GERİ GELDİ
+from google.oauth2.service_account import Credentials  # GİZLİ BAĞLANTI İÇİN GERİ GELDİ
 from datetime import datetime
 import streamlit.components.v1 as components
 
@@ -167,21 +169,51 @@ def build_smart_link(label, raw_id, row):
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
     return None
 
-@st.cache_data(ttl=60)
+# ================= GİZLİ BAĞLANTI (GSPREAD & SECRETS) =================
+@st.cache_data(ttl=900)  # 15 Dakikada bir güncellenir
 def load_and_merge_data():
-    fiyat_url_csv = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Guncel&range=A:M"
-    fiyat_url_xlsx = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx&sheet=Guncel"
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     try:
-        df_fiyat = pd.read_csv(fiyat_url_csv, dtype=str)
+        # 1. JSON YETKİLENDİRMESİ (SECRETS ÜZERİNDEN)
+        if "gcp_service_account" in st.secrets:
+            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        elif os.path.exists("service_account.json"):
+            # Lokal test için dosyayı da destekliyor
+            creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
+        else:
+            st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
+            return None, ""
+
+        # Gspread yetkilendirmesi
+        client = gspread.authorize(creds)
+        
+        # 2. KAPALI DOSYAYI ÇEK
+        sh = client.open_by_key(SHEET_ID)
+        worksheet = sh.worksheet("Guncel")
+        
+        # N1 Son Güncelleme metnini oku
+        update_text = ""
+        try:
+            update_text = worksheet.acell("N1").value
+            update_text = str(update_text).replace('"', '').strip()
+        except: pass
+
+        # Tüm hücreleri alıp DataFrame'e aktar
+        data = worksheet.get_all_values()
+        if not data: return None, update_text
+            
+        df_fiyat = pd.DataFrame(data[1:], columns=data[0])
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
         
+        # 3. KİMLİK DOĞRULAMALI EXCEL İNDİRME (Hiperlinkleri Okumak İçin)
         gsheet_bs_links = {}
         try:
-            r = requests.get(fiyat_url_xlsx)
-            wb_gs = openpyxl.load_workbook(io.BytesIO(r.content), data_only=False)
-            ws_gs = wb_gs.active
+            export_data = client.export(SHEET_ID, format='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            wb_gs = openpyxl.load_workbook(io.BytesIO(export_data), data_only=False)
+            ws_gs = wb_gs["Guncel"]
+            
             headers_gs = [str(c.value).strip() if c.value else "" for c in ws_gs[1]]
             idx_bc_gs = next((i for i, h in enumerate(headers_gs) if "barkod" in h.lower()), None)
             idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
@@ -191,9 +223,12 @@ def load_and_merge_data():
                     bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1)
                     url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
                     if bc_val and url: gsheet_bs_links[bc_val] = url
-        except: pass
+        except Exception as e: 
+            print(f"Hyperlink çekme hatası: {e}")
+            
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         
+        # 4. YEREL MAPPING DOSYASI İLE BİRLEŞTİRME
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -214,11 +249,13 @@ def load_and_merge_data():
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
-            return df_final.fillna("")
-        return df_fiyat.fillna("")
+            return df_final.fillna(""), update_text
+            
+        return df_fiyat.fillna(""), update_text
+        
     except Exception as e:
-        st.error(f"Veri yükleme hatası: {e}")
-        return None
+        st.error(f"Kimlik doğrulama veya bağlantı hatası: {e}")
+        return None, ""
 
 # ================= RENDER =================
 def display_styled_table(df, mapping):
@@ -277,16 +314,15 @@ with col_title:
     else:
         st.title("📊 Aksiyon Raporu")
 
-update_text = ""
-try: 
-    res = requests.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&range=N1")
-    update_text = res.text.replace('"', '').strip()
-except: pass
+# Veri Çekme Motorunu Çalıştır
+res = load_and_merge_data()
+df_data = res[0] if res else None
+update_text = res[1] if res else ""
 
 with col_update:
-    if update_text: st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
+    if update_text: 
+        st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
 
-df_data = load_and_merge_data()
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
