@@ -423,7 +423,7 @@ if df_data is not None:
     # EXCEL İNDİRME İÇİN SAAT GMT+3 TÜRKİYE SAATİNE AYARLANDI
     tr_time_now = datetime.utcnow() + timedelta(hours=3)
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
-    excel_filename = f"Fiyat_Analiz_Raporu_{current_time_str}.xlsx"
+    excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
