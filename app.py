@@ -86,22 +86,20 @@ components.html(
                 let shadowColor = "";
                 
                 if (brightness < 128) {
-                    // Karanlık Tema Gölgesi
+                    // Karanlık Tema
                     logoCss = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.8)"; 
+                    shadowColor = "rgba(0, 0, 0, 0.9)"; // Derin karanlık gölge
                 } else {
-                    // Aydınlık Tema Gölgesi
+                    // Aydınlık Tema
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.15)"; 
+                    shadowColor = "rgba(0, 0, 0, 0.15)"; // Derin aydınlık gölge
                 }
                 
-                // Başlıktaki dikey çizgiler (border-left/right) kesin olarak engellendi!
+                // Üste vuran boya gölgesi (0 -5px) ve alta vuran gerçek gölge (0 8px 12px)
                 styleTag.innerHTML = logoCss + ` 
                 .custom-table thead th { 
                     background-color: ${bgColor} !important; 
-                    box-shadow: 0 -10px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
-                    border-left: none !important;
-                    border-right: none !important;
+                    box-shadow: 0 -5px 0 ${bgColor}, 0 8px 12px -4px ${shadowColor} !important; 
                 }`;
             }
         }, 500);
@@ -110,7 +108,7 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (DİKEY ÇİZGİLER SİLİNDİ) =================
+# ================= CSS (DİKEY ÇİZGİLER SİLİNDİ, BOŞLUK MÜHÜRLENDİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
@@ -127,10 +125,11 @@ st.markdown("""
         border: none !important;
     }
     
+    /* Hücreleri tamamen birleştir (çatlakları kapatır) ve tüm çerçeveleri sil */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; 
+        border-collapse: collapse !important; 
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -142,7 +141,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: -1px !important; 
+        top: -1px !important; /* Şeffaf boşluğun üstüne fiziksel olarak oturur! */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -150,10 +149,7 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        /* Dikey ve diğer tüm çizgiler iptal! Sadece alt çizgi kalsın */
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
+        border: none !important; 
         border-bottom: 1px solid rgba(128,128,128,0.15) !important;
     }
     
@@ -165,7 +161,7 @@ st.markdown("""
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.08) !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
     }
     
     .custom-table tbody tr:last-child td {
@@ -460,22 +456,31 @@ with col_update:
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
+    
+    # ------------------ ÇOKLU SEÇİM GÜNCELLEMESİ ------------------
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
         for x in df_data[alt_grup_col].dropna():
             v = str(x).strip()
             if v != "" and v not in gruplar: gruplar.append(v)
-            unique_gruplar = ["Tümü"] + gruplar
-    else: unique_gruplar = ["Tümü"]
+    else: 
+        gruplar = []
 
     col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
     with col_search: search = st.text_input("🔍 Ürün Ara...")
-    with col_grup: filter_grup = st.selectbox("📂 Alt Grup", unique_gruplar)
+    
+    # st.selectbox YERİNE st.multiselect KULLANILDI
+    with col_grup: filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü (Çoklu Seçim)")
+    
     with col_plat: filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
     with col_stat: filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"])
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-    if filter_grup != "Tümü" and alt_grup_col: df_data = df_data[df_data[alt_grup_col].astype(str).str.strip() == filter_grup]
+    
+    # FİLTRELEME MANTIĞI ÇOKLU SEÇİME (LISTE ve isin) GÖRE UYARLANDI
+    if filter_grup and alt_grup_col: 
+        df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
+        
     if filter_status != "Tümü":
         bs_col = mapping.get("Braun Shop")
         if bs_col:
