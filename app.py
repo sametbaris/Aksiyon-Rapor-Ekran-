@@ -111,8 +111,62 @@ st.markdown("""
     }
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
-    .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
-    .main-system-logo { height: 60px; width: auto; object-fit: contain; }
+    
+    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
+    .main-logo-container { 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        margin-bottom: 20px; 
+        flex-wrap: wrap;
+    }
+    
+    .main-system-logo { 
+        height: 60px; 
+        width: auto; 
+        object-fit: contain; 
+        transition: height 0.3s;
+    }
+    
+    .main-title-text {
+        margin: 0; 
+        display: inline-block;
+        font-size: 2.2rem;
+        font-weight: 700;
+        transition: font-size 0.3s;
+    }
+    
+    .online-badge-container {
+        display: flex; 
+        align-items: center; 
+        gap: 6px; 
+        background: rgba(0, 255, 0, 0.1); 
+        padding: 4px 12px; 
+        border-radius: 20px; 
+        border: 1px solid rgba(0, 255, 0, 0.2); 
+    }
+    
+    /* TELEFONLAR (MOBİL EKRANLAR) İÇİN ÖZEL CSS MEDYA SORGUSU */
+    @media (max-width: 768px) {
+        .main-logo-container {
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .main-system-logo {
+            height: 45px; 
+        }
+        .main-title-text {
+            font-size: 1.6rem; 
+        }
+        .online-badge-container {
+            margin-left: 0 !important; 
+            margin-top: 2px;
+        }
+    }
     
     /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
     div[data-baseweb="popover"] {
@@ -205,7 +259,11 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    # Google OAuth standartlarına %100 uyumlu tam yetkili resmi API scope adresleri
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
     try:
         if "gcp_service_account" in st.secrets:
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
@@ -454,19 +512,30 @@ col_title, col_update = st.columns([3, 1])
 
 with col_title:
     online_users = track_user_presence()
-    online_badge = f'<div style="display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); margin-left: 15px;"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
+    
+    online_badge = f"""
+        <div class="online-badge-container">
+            <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span>
+            <span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span>
+        </div>
+    """
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
         st.markdown(f"""
             <div class="main-logo-container">
                 <img src="{l_sys}" class="main-system-logo">
-                <h1 style="margin: 0; display: inline-block;">Aksiyon Raporu</h1>
+                <h1 class="main-title-text">Aksiyon Raporu</h1>
                 {online_badge}
             </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0;">📊 Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="main-logo-container">
+                <h1 class="main-title-text">📊 Aksiyon Raporu</h1>
+                {online_badge}
+            </div>
+        """, unsafe_allow_html=True)
 
 res = load_and_merge_data()
 df_data = res[0] if res else None
@@ -571,19 +640,15 @@ if df_data is not None:
     display_styled_table(df_data, mapping)
 
 # ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
-# HTML/JS Zamanlayıcı en alta eklendi. Running ikonu tamamen yok edildi!
-# 180000 milisaniye = 180 saniye (3 dakika)
 components.html(
     """
     <script>
     const parentWindow = window.parent;
     setTimeout(() => {
-        // Streamlit'in kendi içindeki rerun tetikleyicisini sessizce uyandırır
         const rerunButton = parentWindow.document.querySelector('.stApp [data-testid="stHeader"] button');
         if (rerunButton) {
             rerunButton.click();
         } else {
-            // Alternatif olarak Streamlit penceresine rerun talimatı gönderir
             parentWindow.location.reload();
         }
     }, 180000); 
