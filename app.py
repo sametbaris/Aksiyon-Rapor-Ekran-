@@ -77,6 +77,7 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
+                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -99,31 +100,36 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (NETLİK EŞİTLEMESİ VE TABLO) =================
+# ================= CSS =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN DOĞAL KESKİN YAZI */
-    * {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-    }
-
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* 2. TÜM AÇILIR MENÜLERİ (SELECT VE MULTISELECT) BİRBİRİNE EŞİTLİYORUZ */
-    div[data-baseweb="popover"] [role="option"],
-    div[data-baseweb="popover"] [role="option"] span,
-    div[data-baseweb="select"] span {
-        font-family: inherit !important;
-        font-size: 14px !important; 
-        font-weight: 400 !important; /* Çok kalın yazılar bulanık görünür, normale çektik */
-        letter-spacing: normal !important;
+    /* ========================================================= */
+    /* AÇILIR MENÜ (MULTISELECT) KESİN BULANIKLIK ÇÖZÜMÜ         */
+    /* ========================================================= */
+    div[data-baseweb="popover"] {
+        /* Alt katmanlardaki sub-pixel dönüşümlerini düzleştirir */
+        transform-style: flat !important; 
     }
     
-    /* 3. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
+    div[data-baseweb="popover"] * {
+        /* Tüm yapay müdahaleleri silip tarayıcının doğal HD motorunu (ClearType) devreye sokar */
+        -webkit-font-smoothing: auto !important;
+        -moz-osx-font-smoothing: auto !important;
+        text-rendering: auto !important;
+        text-shadow: none !important;
+        -webkit-text-stroke: 0px !important;
+        font-family: inherit !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
+        letter-spacing: normal !important;
+    }
+    /* ========================================================= */
+    
+    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
         width: 100%; 
         margin-top: 10px; 
@@ -137,7 +143,7 @@ st.markdown("""
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; 
+        border-collapse: separate !important; /* Gölge için separate şart */
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -146,10 +152,10 @@ st.markdown("""
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* 4. BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
+    /* BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; 
+        top: 0px !important; /* Titremeyi engellemek için SIFIRDA kalmalı */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -158,7 +164,12 @@ st.markdown("""
         text-transform: uppercase; 
         font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
+        
+        /* İlk parametre (0 -2px 0) üstteki sızıntıyı boya atarak kapatır. 
+           İkinci parametre (0 8px 15px) alta muazzam bir 3D gölge vurur. 
+        */
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
+        
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
