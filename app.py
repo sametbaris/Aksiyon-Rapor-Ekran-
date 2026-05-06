@@ -65,7 +65,7 @@ LOGOS = {
     "Braun Shop": load_logo_pair("braunshop.png")
 }
 
-# ================= TEMA DEDEKTÖRÜ (GÖLGE DEĞİŞKENLERİ) =================
+# ================= TEMA DEDEKTÖRÜ (CSS DEĞİŞKENLERİNİ ALIR) =================
 components.html(
     """
     <script>
@@ -77,21 +77,17 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
+                // Sadece renk değişkenlerini enjekte ediyoruz, HTML manipülasyonu yapmıyoruz
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
-                let styleTag = parentDoc.getElementById("logo-theme-style");
-                if (!styleTag) {
-                    styleTag = parentDoc.createElement("style");
-                    styleTag.id = "logo-theme-style";
-                    parentDoc.head.appendChild(styleTag);
-                }
-                
+                // Temanın karanlık olup olmadığını belirten bir CSS sınıfı ekliyoruz
                 if (brightness < 128) {
-                    styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
+                    parentDoc.documentElement.classList.add('dark-theme');
+                    parentDoc.documentElement.classList.remove('light-theme');
                 } else {
-                    styleTag.innerHTML = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
+                    parentDoc.documentElement.classList.add('light-theme');
+                    parentDoc.documentElement.classList.remove('dark-theme');
                 }
             }
         }, 500);
@@ -112,6 +108,28 @@ st.markdown("""
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
+    /* ========================================================= */
+    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI (JS ÇAKIŞMASIZ)  */
+    /* ========================================================= */
+    /* Varsayılan olarak aydınlık mod logolarını göster, karanlıkları gizle */
+    .logo-light { display: inline-block !important; }
+    .logo-dark { display: none !important; }
+    
+    /* Karanlık tema sınıfı algılandığında tam tersini uygula */
+    .dark-theme .logo-light,
+    html[data-theme="dark"] .logo-light { 
+        display: none !important; 
+    }
+    .dark-theme .logo-dark,
+    html[data-theme="dark"] .logo-dark { 
+        display: inline-block !important; 
+    }
+    .dark-theme .logo-dark.invert-logo,
+    html[data-theme="dark"] .logo-dark.invert-logo { 
+        filter: brightness(0) invert(1) !important; 
+    }
+    /* ========================================================= */
+
     /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
     .main-logo-container { 
         display: flex; 
@@ -259,7 +277,6 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    # Google OAuth standartlarına %100 uyumlu tam yetkili resmi API scope adresleri
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
@@ -513,7 +530,7 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
-    # Online rozeti HTML'ini tek parça ve sızıntısız hale getirdik
+    # Online rozeti - Sızıntı yapmayacak şekilde tamamen temizlendi
     online_badge = f"""
         <div class="online-badge-container">
             <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span>
