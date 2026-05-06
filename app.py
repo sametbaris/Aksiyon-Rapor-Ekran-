@@ -92,16 +92,14 @@ components.html(
                 } else {
                     // Aydınlık Tema
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.15)"; // Derin aydınlık gölge
+                    shadowColor = "rgba(0, 0, 0, 0.12)"; // Aydınlık gölge
                 }
                 
-                // box-shadow kullanımı:
-                // 1. parametre: 0 -10px 0 ${bgColor} -> Üstteki sızıntıyı kapatan, kendi renginde yukarı taşan boya
-                // 2. parametre: 0 10px 15px -5px ${shadowColor} -> Başlığın altına verilen gerçek 3D derinlik
+                // Üste vuran boya gölgesi (0 -5px) ve alta vuran gerçek gölge (0 8px 12px)
                 styleTag.innerHTML = logoCss + ` 
                 .custom-table thead th { 
                     background-color: ${bgColor} !important; 
-                    box-shadow: 0 -10px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
+                    box-shadow: 0 -5px 0 ${bgColor}, 0 8px 12px -4px ${shadowColor} !important; 
                 }`;
             }
         }, 500);
@@ -110,7 +108,7 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS =================
+# ================= CSS (DİKEY ÇİZGİLER SİLİNDİ, BOŞLUK MÜHÜRLENDİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
@@ -120,22 +118,21 @@ st.markdown("""
     .table-container { 
         width: 100%; 
         margin-top: 10px; 
-        overflow-x: auto; 
+        overflow: auto; 
         max-height: 75vh; 
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        border: none !important;
     }
     
-    /* ÇOK KRİTİK: Sticky header gölgelerinin bozulmaması ve sızıntı 
-      yapmaması için border-collapse özelliği "separate" olmalıdır! 
-    */
+    /* Hücreleri tamamen birleştir (çatlakları kapatır) ve tüm çerçeveleri sil */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate; 
-        border-spacing: 0; 
+        border-collapse: collapse !important; 
+        border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
-        border: none; 
+        border: none !important; 
     }
     
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
@@ -144,7 +141,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: 0; 
+        top: -1px !important; /* Şeffaf boşluğun üstüne fiziksel olarak oturur! */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -152,15 +149,24 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        border-bottom: none; /* Alt çizgi gölge ile sağlanıyor */
+        border: none !important; /* Her türlü çizgiyi engeller */
+        border-bottom: 1px solid rgba(128,128,128,0.15) !important;
     }
     
-    /* Satır Çizgileri ve İç Boşlukları */
+    /* Hücreler ve Dikey Çizgi Katliamı */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
-        border-bottom: 1px solid rgba(128,128,128,0.08); /* Hafif satır çizgisi tabloyu okunaklı yapar */
         white-space: nowrap; 
+        border-top: none !important;
+        border-left: none !important; /* DİKEY ÇİZGİ İPTAL */
+        border-right: none !important; /* DİKEY ÇİZGİ İPTAL */
+        border-bottom: 1px solid rgba(128,128,128,0.06) !important; /* Çok soft yatay çizgi */
+    }
+    
+    /* Son satırın altındaki gereksiz çizgiyi sil */
+    .custom-table tbody tr:last-child td {
+        border-bottom: none !important;
     }
     
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
