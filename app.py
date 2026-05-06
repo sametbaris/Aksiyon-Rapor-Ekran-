@@ -65,7 +65,7 @@ LOGOS = {
     "Braun Shop": load_logo_pair("braunshop.png")
 }
 
-# ================= TEMA DEDEKTÖRÜ =================
+# ================= TEMA DEDEKTÖRÜ (SİYAH BAŞLIK HATASI GİDERİLDİ) =================
 components.html(
     """
     <script>
@@ -82,11 +82,14 @@ components.html(
             let rgb = bgColor.match(/\\d+/g);
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+                let logoCss = "";
                 if (brightness < 128) {
-                    styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
+                    logoCss = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
                 } else {
-                    styleTag.innerHTML = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
+                    logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
                 }
+                // Uygulamanın orijinal arkaplan rengini okuyup başlığa (th) otomatik uygular
+                styleTag.innerHTML = logoCss + ` .custom-table thead tr th { background-color: ${bgColor} !important; border-bottom: 1px solid rgba(128,128,128,0.2) !important; }`;
             }
         }, 500);
     } catch (e) {}
@@ -94,19 +97,18 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (STİCKY HEADER EKLENDİ) =================
+# ================= CSS =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* Yapışkan Başlık İçin Konteyner Sınırları */
     .table-container { 
         width: 100%; 
         margin-top: 10px; 
         overflow-x: auto; 
-        max-height: 75vh; /* Dikey kaydırma çubuğunun tetiklenmesi için limit */
+        max-height: 75vh; 
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
@@ -115,45 +117,24 @@ st.markdown("""
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* --- DONUK (STICKY) BAŞLIK SATIRI CSS --- */
+    /* Sticky (Donuk) Başlık */
     .custom-table thead tr th { 
         position: sticky; 
         top: 0; 
-        background-color: var(--background-color, #ffffff); /* Temaya göre arka plan rengini otomatik alır */
         z-index: 10; 
-        box-shadow: inset 0 -2px 0 #ddd; /* Alt çizgi efekti */
-    }
-    /* Streamlit karanlık modunda başlık arka planını korumak için */
-    @media (prefers-color-scheme: dark) {
-        .custom-table thead tr th {
-            background-color: #0e1117; /* Streamlit koyu arka plan rengi */
-            box-shadow: inset 0 -2px 0 #333;
-        }
+        padding: 12px 20px; 
+        text-align: center;
+        color: var(--header-color); 
+        font-weight: 500; 
+        text-transform: uppercase; 
+        font-size: 11px;
     }
     
-    .custom-table th { color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px; padding: 12px 20px; text-align: center; }
     .custom-table td { padding: 4px 10px; text-align: center; border: none; white-space: nowrap; }
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
-    
-    /* Sayacı Şıklaştıran Badge Alanı */
-    .counter-badge {
-        text-align: center; 
-        color: var(--header-color); 
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 11px; 
-        background: var(--pill-default-bg); 
-        padding: 6px 20px; 
-        border-radius: 30px; 
-        display: block;
-        margin: 25px auto 10px auto;
-        width: fit-content;
-        letter-spacing: 0.5px;
-    }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
@@ -161,7 +142,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= GZIP / GSPREAD KİMLİK DOĞRULAMA =================
+# ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -356,34 +337,52 @@ def load_and_merge_data():
 # ================= RENDER TABLO =================
 def display_styled_table(df, mapping):
     refs = { "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ" }
+    pazaryerleri = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
+    
     for label, real in mapping.items():
         if real:
+            # 1) Her pazaryeri için geçerli fiyatı olan ürün sayısını hesapla
+            count_html = ""
+            if label in pazaryerleri:
+                valid_count = sum(1 for v in df[real] if parse_price(v) is not None)
+                count_html = f'<div style="font-size: 11px; color: var(--header-color); margin-top: 6px; font-weight: 700; letter-spacing: 0.5px; text-transform: none;">{valid_count} Ürün</div>'
+
+            # 2) Logonun altına bu sayacı ekle
             logo_pair = LOGOS.get(label)
             plat_url = PLATFORM_LINKS.get(label)
+            
             if logo_pair and logo_pair["light"]:
                 l_src = logo_pair["light"]; d_src = logo_pair["dark"]
                 inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
                 if plat_url: content = f'<a href="{plat_url}" target="_blank" style="text-decoration:none;"><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></a>'
                 else: content = f'<img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}">'
-                html += f'<th>{content}</th>'
-            else: html += f'<th>{label}</th>'
+                
+                html += f'<th>{content}{count_html}</th>'
+            else: 
+                html += f'<th>{label}{count_html}</th>'
+
     html += '</tr></thead><tbody>'
+    
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
             if not real: continue
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
+            
             if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
                 p_ref = parse_price(row[bs_col_name]); p_curr = parse_price(d_val)
                 if p_ref and p_curr:
                     if p_curr == p_ref: style = 'background-color: #d4edda; color: #155724; font-weight: 600;' 
                     elif p_curr > p_ref: style = 'background-color: #fff3cd; color: #856404; font-weight: 600;' 
                     else: style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;' 
+                    
             if not style and d_val:
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
+                
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
@@ -505,10 +504,5 @@ if df_data is not None:
     with col_btn:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
-
-    # --- TOPLAM ÜRÜN SAYACI ---
-    # Alt grup ve Barkod başlıklarının tasarım bütünlüğünü bozmamak adına counter-badge CSS sınıfı ile yazdırıldı.
-    total_products = len(df_data)
-    st.markdown(f'<div class="counter-badge">📋 Toplam {total_products} Ürün Listeleniyor</div>', unsafe_allow_html=True)
 
     display_styled_table(df_data, mapping)
