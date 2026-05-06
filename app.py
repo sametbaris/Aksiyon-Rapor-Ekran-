@@ -88,19 +88,20 @@ components.html(
                 if (brightness < 128) {
                     // Karanlık Tema
                     logoCss = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.7)"; // Karanlık temaya uygun güçlü gölge
+                    shadowColor = "rgba(0, 0, 0, 0.9)"; // Derin karanlık gölge
                 } else {
                     // Aydınlık Tema
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.12)"; // Aydınlık temaya uygun soft gölge
+                    shadowColor = "rgba(0, 0, 0, 0.15)"; // Derin aydınlık gölge
                 }
                 
-                // Başlık arka planını sayfanınkiyle eşitler, şık bir alt gölge (box-shadow) ekler
+                // box-shadow kullanımı:
+                // 1. parametre: 0 -10px 0 ${bgColor} -> Üstteki sızıntıyı kapatan, kendi renginde yukarı taşan boya
+                // 2. parametre: 0 10px 15px -5px ${shadowColor} -> Başlığın altına verilen gerçek 3D derinlik
                 styleTag.innerHTML = logoCss + ` 
-                .custom-table thead tr th { 
+                .custom-table thead th { 
                     background-color: ${bgColor} !important; 
-                    box-shadow: 0 6px 12px -4px ${shadowColor} !important; 
-                    border-bottom: 1px solid rgba(128,128,128,0.15) !important; 
+                    box-shadow: 0 -10px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
                 }`;
             }
         }, 500);
@@ -122,29 +123,46 @@ st.markdown("""
         overflow-x: auto; 
         max-height: 75vh; 
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Dış çerçevenin gölgesi duruyor */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
     }
     
-    /* Hücre birleştirme (collapse) ile sızıntı boşluğu SIFIRLANDI! */
-    .custom-table { width: 100%; table-layout: auto; border-collapse: collapse; font-family: 'Inter', sans-serif; border: none; }
+    /* ÇOK KRİTİK: Sticky header gölgelerinin bozulmaması ve sızıntı 
+      yapmaması için border-collapse özelliği "separate" olmalıdır! 
+    */
+    .custom-table { 
+        width: 100%; 
+        table-layout: auto; 
+        border-collapse: separate; 
+        border-spacing: 0; 
+        font-family: 'Inter', sans-serif; 
+        border: none; 
+    }
+    
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* Sticky (Donuk) Başlık ve Güçlü Z-Index */
-    .custom-table thead tr th { 
+    /* Sticky (Donuk) Başlık */
+    .custom-table thead th { 
         position: sticky; 
-        top: 0; /* Artık sıfır, boşluk yok! */
-        z-index: 20; /* Alttaki hücrelerin üstüne çıkması için artırıldı */
-        padding: 12px 20px; 
+        top: 0; 
+        z-index: 20; 
+        padding: 14px 20px; 
         text-align: center;
         color: var(--header-color); 
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
+        border-bottom: none; /* Alt çizgi gölge ile sağlanıyor */
     }
     
-    /* Satır aralığını korumak için hücre padding'i 8px yapıldı */
-    .custom-table td { padding: 8px 10px; text-align: center; border: none; white-space: nowrap; }
+    /* Satır Çizgileri ve İç Boşlukları */
+    .custom-table td { 
+        padding: 8px 10px; 
+        text-align: center; 
+        border-bottom: 1px solid rgba(128,128,128,0.08); /* Hafif satır çizgisi tabloyu okunaklı yapar */
+        white-space: nowrap; 
+    }
+    
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     
