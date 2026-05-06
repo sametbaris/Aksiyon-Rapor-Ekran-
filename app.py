@@ -322,7 +322,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=900)
+@st.cache_data(ttl=180)  # 900 yerine 180 (3 dakika) yaptık
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
@@ -569,3 +569,19 @@ if df_data is not None:
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
 
     display_styled_table(df_data, mapping)
+    # ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
+# st.fragment sayesinde bu fonksiyon arka planda Streamlit'i tamamen 
+# yenilemeden (refresh yapmadan) sessizce tetikler.
+@st.fragment
+def auto_rerun_trigger(interval_seconds=60):
+    """
+    Belirtilen saniye aralığıyla sayfayı arka planda sessizce rerun eder.
+    Varsayılan: 60 saniye (1 dakika). İhtiyacına göre değiştirebilirsin.
+    """
+    import time
+    # Streamlit'in resmi zamanlayıcı aracı (Sessizce bekler)
+    time.sleep(interval_seconds)
+    st.rerun()
+
+# Tetikleyiciyi çalıştır (Her 60 saniyede bir arkada tetikler)
+auto_rerun_trigger(interval_seconds=60)
