@@ -214,6 +214,36 @@ st.markdown("""
         border: none !important;
     }
     
+    /* ========================================================= */
+    /* ULTRA MİNİMAL, ŞIK VE İNCE KAYDIRMA ÇUBUĞU (SCROLLBAR)    */
+    /* ========================================================= */
+    /* Webkit tarayıcılar (Chrome, Safari, Edge, Opera) için */
+    .table-container::-webkit-scrollbar {
+        width: 5px !important;  /* Dikey bar genişliği (ultra ince) */
+        height: 5px !important; /* Yatay bar yüksekliği (ultra ince) */
+    }
+    
+    .table-container::-webkit-scrollbar-track {
+        background: transparent !important; /* Arka planı tamamen görünmez/saydam yap */
+    }
+    
+    .table-container::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.2) !important; /* Yarı saydam gri asil renk */
+        border-radius: 10px !important; /* Yuvarlak kenarlar */
+        transition: background 0.3s ease;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(128, 128, 128, 0.4) !important; /* Üzerine gelindiğinde hafifçe koyulaşır */
+    }
+    
+    /* Firefox tarayıcılar için modern uyumluluk */
+    .table-container {
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(128, 128, 128, 0.2) transparent !important;
+    }
+    /* ========================================================= */
+    
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
@@ -524,12 +554,11 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
-    # 1. HTML PARSER HATASINI ENGELLEMEK İÇİN TEK SATIR (INLINE STRING) BİÇİMİNE GETİRİLDİ
+    # Online rozeti HTML'i (HTML Parser sızıntısı tamamen engellendi)
     online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
-        # parser'ın kafa karışıklığını önlemek için tüm HTML tek bir dize olarak sarmalandı
         st.markdown(f'<div class="main-logo-container"><img src="{l_sys}" class="main-system-logo"><h1 class="main-title-text">Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="main-logo-container"><h1 class="main-title-text">📊 Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
