@@ -77,7 +77,6 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -100,45 +99,28 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS =================
+# ================= CSS (NETLİK EŞİTLEMESİ VE TABLO) =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN KESKİN YAZI (ANTI-ALIASING) ZORLAMASI */
+    /* 1. TÜM SAYFA İÇİN DOĞAL KESKİN YAZI */
     * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
-        /*optimizeLegibility bulanıklık yapabilir, geometricPrecision ile değiştirildi*/
-        text-rendering: geometricPrecision !important;
+        text-rendering: optimizeLegibility !important;
     }
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* 2. AÇILIR MENÜ (MULTISELECT) HD ÇÖZÜNÜRLÜK DÜZELTMESİ (Konum bozmadan!) */
-    div[data-baseweb="popover"] {
-        /* GPU render'ını zorlayan backface kodunu koyduk */
-        backface-visibility: hidden !important;
-        -webkit-backface-visibility: hidden !important;
-    }
-    
+    /* 2. TÜM AÇILIR MENÜLERİ (SELECT VE MULTISELECT) BİRBİRİNE EŞİTLİYORUZ */
     div[data-baseweb="popover"] [role="option"],
-    div[data-baseweb="popover"] [role="option"] span {
-        /* Netliği en üst seviyeye çıkaran agresif komutlar */
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: geometricPrecision !important; /* Font şeklini korur, bulanıklığı önler */
-        
+    div[data-baseweb="popover"] [role="option"] span,
+    div[data-baseweb="select"] span {
+        font-family: inherit !important;
         font-size: 14px !important; 
-        font-weight: 500 !important;
-        letter-spacing: -0.1px !important; /* Harfleri biraz yaklaştırıp netliği artırır */
-        
-        /* MUHTEŞEM KESKİNLİK SİHİRLERİ */
-        /* 1. Çok ince, saydam bir çizgi ile harf kenarlarını belirginleştir */
-        -webkit-text-stroke: 0.1px rgba(128,128,128,0.1) !important;
-        
-        /* 2. Tarayıcı piksel motorunu zorlayan mikroskobik gölge */
-        text-shadow: 0 0 0.1px rgba(0,0,0,0.2) !important;
+        font-weight: 400 !important; /* Çok kalın yazılar bulanık görünür, normale çektik */
+        letter-spacing: normal !important;
     }
     
     /* 3. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
@@ -155,7 +137,7 @@ st.markdown("""
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; /* Gölge için separate şart */
+        border-collapse: separate !important; 
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -167,7 +149,7 @@ st.markdown("""
     /* 4. BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; /* Titremeyi engellemek için SIFIRDA kalmalı */
+        top: 0px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
