@@ -65,7 +65,7 @@ LOGOS = {
     "Braun Shop": load_logo_pair("braunshop.png")
 }
 
-# ================= TEMA DEDEKTÖRÜ (SİYAH BAŞLIK HATASI GİDERİLDİ) =================
+# ================= TEMA DEDEKTÖRÜ VE SIZINTI ENGELLEYİCİ =================
 components.html(
     """
     <script>
@@ -88,8 +88,8 @@ components.html(
                 } else {
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
                 }
-                // Uygulamanın orijinal arkaplan rengini okuyup başlığa (th) otomatik uygular
-                styleTag.innerHTML = logoCss + ` .custom-table thead tr th { background-color: ${bgColor} !important; border-bottom: 1px solid rgba(128,128,128,0.2) !important; }`;
+                // box-shadow: 0 -15px 0 ${bgColor} kısmı üstteki şeffaf sızıntı boşluğunu kendi rengiyle kapatır!
+                styleTag.innerHTML = logoCss + ` .custom-table thead tr th { background-color: ${bgColor} !important; box-shadow: 0 -15px 0 ${bgColor} !important; border-bottom: 1px solid rgba(128,128,128,0.2) !important; }`;
             }
         }, 500);
     } catch (e) {}
@@ -120,7 +120,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead tr th { 
         position: sticky; 
-        top: 0; 
+        top: -2px; /* Olası ufak kaymaları önlemek için sıfırın hemen altı */
         z-index: 10; 
         padding: 12px 20px; 
         text-align: center;
@@ -343,13 +343,11 @@ def display_styled_table(df, mapping):
     
     for label, real in mapping.items():
         if real:
-            # 1) Her pazaryeri için geçerli fiyatı olan ürün sayısını hesapla
             count_html = ""
             if label in pazaryerleri:
                 valid_count = sum(1 for v in df[real] if parse_price(v) is not None)
                 count_html = f'<div style="font-size: 11px; color: var(--header-color); margin-top: 6px; font-weight: 700; letter-spacing: 0.5px; text-transform: none;">{valid_count} Ürün</div>'
 
-            # 2) Logonun altına bu sayacı ekle
             logo_pair = LOGOS.get(label)
             plat_url = PLATFORM_LINKS.get(label)
             
