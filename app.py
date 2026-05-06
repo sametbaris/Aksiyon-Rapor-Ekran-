@@ -95,13 +95,11 @@ components.html(
                     shadowColor = "rgba(0, 0, 0, 0.15)"; 
                 }
                 
-                // Başlığa (th) dinamik renk ve sadece AŞAĞI doğru vuran harika bir derinlik (box-shadow) ekliyoruz
-                // Üste vuran gölgeyi (-1px) minik bir mühür olarak kullanıyoruz
-                styleTag.innerHTML = logoCss + ` 
-                .custom-table thead th { 
-                    background-color: ${bgColor} !important; 
-                    box-shadow: 0 -1px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
-                }`;
+                // CSS Değişkenlerini tüm dokümana enjekte ediyoruz (Gölge hilesi için)
+                parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
+                parentDoc.documentElement.style.setProperty('--dynamic-shadow-color', shadowColor);
+                
+                styleTag.innerHTML = logoCss;
             }
         }, 500);
     } catch (e) {}
@@ -109,23 +107,31 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (MİLİMETRİK KAYMA VE ÇÖZÜNÜRLÜK DÜZELTİLDİ) =================
+# ================= CSS (NETLİK VE TABLO STİLLERİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* Multiselect (Çoklu Seçim) Filtreleri için Yüksek Çözünürlük (Anti-Aliasing) */
-    div[data-baseweb="select"] *, div[role="listbox"] * {
+    /* ========================================================= */
+    /* AÇILIR MENÜ (POPOVER) VE FİLTRELER İÇİN HD KESKİNLİK AYARI */
+    /* ========================================================= */
+    div[data-baseweb="select"] *, 
+    div[data-baseweb="popover"] * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: optimizeLegibility !important;
+    }
+    div[data-baseweb="popover"] ul li span {
+        font-weight: 500 !important;
+        font-size: 14.5px !important;
+        letter-spacing: 0.3px !important;
+    }
+    div[data-baseweb="select"] span {
         font-weight: 500 !important;
     }
-    div[role="listbox"] span {
-        font-size: 14.5px !important;
-    }
+    /* ========================================================= */
 
     .table-container { 
         width: 100%; 
@@ -135,14 +141,14 @@ st.markdown("""
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         border: none !important;
-        transform: translateZ(0); /* GPU ivmelenmesi ile scroll yaparken titremeyi/kaymayı önler */
+        position: relative;
     }
     
+    /* İnce sızıntı boşluğunu mühürlemek için collapse (birleşik) zorunludur! */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; 
-        border-spacing: 0 !important; 
+        border-collapse: collapse !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
     }
@@ -153,7 +159,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; /* -1px kaldırıldı, GPU ivmelenmesi ile tam 0'da kusursuz durur */
+        top: -1px !important; /* En üst sızıntı boşluğunu fiziki olarak yutar */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -161,12 +167,27 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        border: none !important; 
-        background-clip: padding-box; /* Başlık arkaplanının dışarı sızmasını engeller */
-        border-bottom: 1px solid rgba(128,128,128,0.15) !important;
+        background-color: var(--dynamic-bg-color, #ffffff) !important; /* Arkaplanı JS'den alır */
+        border-top: none !important;
+        border-left: none !important; 
+        border-right: none !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.15) !important; /* Gölge için ayırıcı taban çizgisi */
     }
     
-    /* Satır Çizgileri ve İç Boşlukları */
+    /* KURTARICI HİLE: Pseudo-Element ile harika bir gölge yaratıyoruz */
+    .custom-table thead th::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%; /* Hücrenin tam alt kenarından başlar */
+        height: 6px; /* Gölgenin uzunluğu */
+        background: linear-gradient(to bottom, var(--dynamic-shadow-color, rgba(0,0,0,0.1)), transparent);
+        pointer-events: none;
+        opacity: 1;
+    }
+    
+    /* Hücreler ve Dikey Çizgilerin İptali */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
@@ -174,7 +195,7 @@ st.markdown("""
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.08) !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
     }
     
     .custom-table tbody tr:last-child td {
