@@ -100,7 +100,7 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (MOBİL UYUMLU BAŞLIK EKLEDİK) =================
+# ================= CSS =================
 st.markdown("""
 <style>
     /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
@@ -112,15 +112,13 @@ st.markdown("""
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* ========================================================= */
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ     */
-    /* ========================================================= */
+    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
     .main-logo-container { 
         display: flex; 
         align-items: center; 
         gap: 15px; 
         margin-bottom: 20px; 
-        flex-wrap: wrap; /* Sığmayan elemanların alt satıra düzgün kaymasını sağlar */
+        flex-wrap: wrap;
     }
     
     .main-system-logo { 
@@ -151,7 +149,7 @@ st.markdown("""
     /* TELEFONLAR (MOBİL EKRANLAR) İÇİN ÖZEL CSS MEDYA SORGUSU */
     @media (max-width: 768px) {
         .main-logo-container {
-            flex-direction: column; /* Mobilde her şeyi dikeyde ortalar */
+            flex-direction: column; 
             align-items: center;
             justify-content: center;
             text-align: center;
@@ -159,17 +157,16 @@ st.markdown("""
             width: 100%;
         }
         .main-system-logo {
-            height: 45px; /* Mobilde logo boyutu optimize edildi */
+            height: 45px; 
         }
         .main-title-text {
-            font-size: 1.6rem; /* Mobilde başlık boyutu sığacak şekilde küçüldü */
+            font-size: 1.6rem; 
         }
         .online-badge-container {
-            margin-left: 0 !important; /* Mobilde sola yaslanmayı sıfırlayıp ortalar */
+            margin-left: 0 !important; 
             margin-top: 2px;
         }
     }
-    /* ========================================================= */
     
     /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
     div[data-baseweb="popover"] {
@@ -262,7 +259,11 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    scope = ["https://www.googleapis.com/auth/sheets", "https://www.googleapis.com/auth/drive"]
+    # Google OAuth standartlarına tam uyumlu scope tanımları
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
     try:
         if "gcp_service_account" in st.secrets:
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
@@ -512,7 +513,6 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
-    # Rozet HTML'i responsive container'a uyarlandı
     online_badge = f"""
         <div class="online-badge-container">
             <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span>
@@ -580,7 +580,7 @@ if df_data is not None:
                 for col in actual_cols:
                     p_val = parse_price(row[col])
                     if p_val is not None:
-                        if "🔴" in filter_status().any() and p_val < bs_val: return True
+                        if "🔴" in filter_status and p_val < bs_val: return True
                         if "🟢" in filter_status and p_val == bs_val: return True
                         if "🟡" in filter_status and p_val > bs_val: return True
                 return False
