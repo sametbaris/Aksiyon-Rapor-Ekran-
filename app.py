@@ -95,11 +95,13 @@ components.html(
                     shadowColor = "rgba(0, 0, 0, 0.15)"; 
                 }
                 
-                // Başlığa (th) dinamik renk ve sadece AŞAĞI doğru vuran harika bir derinlik (box-shadow) ekliyoruz
+                // Başlıktaki dikey çizgiler (border-left/right) kesin olarak engellendi!
                 styleTag.innerHTML = logoCss + ` 
                 .custom-table thead th { 
                     background-color: ${bgColor} !important; 
-                    box-shadow: 0 10px 15px -5px ${shadowColor} !important; 
+                    box-shadow: 0 -10px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
+                    border-left: none !important;
+                    border-right: none !important;
                 }`;
             }
         }, 500);
@@ -108,7 +110,7 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (GÖLGE KURTARICI MİMARİ) =================
+# ================= CSS (DİKEY ÇİZGİLER SİLİNDİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
@@ -125,8 +127,6 @@ st.markdown("""
         border: none !important;
     }
     
-    /* GÖLGE KURTARICI: collapse yerine separate kullanıp spacing'i sıfırlıyoruz. 
-       Böylece hücreler yapışık kalıyor ama gölge ezilmiyor! */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
@@ -142,7 +142,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; 
+        top: -1px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -150,19 +150,24 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        border: none !important; 
+        /* Dikey ve diğer tüm çizgiler iptal! Sadece alt çizgi kalsın */
+        border-top: none !important;
+        border-left: none !important; 
+        border-right: none !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.15) !important;
     }
     
-    /* Satır Çizgileri ve İç Boşlukları */
+    /* Hücreler ve Dikey Çizgi İptali */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
         white-space: nowrap; 
-        border: none !important;
-        border-bottom: 1px solid rgba(128,128,128,0.08) !important; /* Hafif yatay ayırıcı çizgi */
+        border-top: none !important;
+        border-left: none !important; 
+        border-right: none !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.08) !important; 
     }
     
-    /* Son satırın altındaki çizgiyi sil */
     .custom-table tbody tr:last-child td {
         border-bottom: none !important;
     }
