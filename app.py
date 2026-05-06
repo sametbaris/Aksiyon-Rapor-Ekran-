@@ -215,32 +215,49 @@ st.markdown("""
     }
     
     /* ========================================================= */
-    /* ULTRA MİNİMAL, ŞIK VE İNCE KAYDIRMA ÇUBUĞU (SCROLLBAR)    */
+    /* HOVER DUYARLI VE OKSUZ ULTRA MİNİMAL SCROLLBAR            */
     /* ========================================================= */
-    /* Webkit tarayıcılar (Chrome, Safari, Edge, Opera) için */
+    /* Webkit (Chrome, Safari, Edge, Opera) */
     .table-container::-webkit-scrollbar {
-        width: 5px !important;  /* Dikey bar genişliği (ultra ince) */
-        height: 5px !important; /* Yatay bar yüksekliği (ultra ince) */
+        width: 5px !important;  
+        height: 5px !important; 
     }
     
     .table-container::-webkit-scrollbar-track {
-        background: transparent !important; /* Arka planı tamamen görünmez/saydam yap */
+        background: transparent !important; 
     }
     
+    /* Normal durumda scrollbar thumb'ı tamamen şeffaftır (görünmez) */
     .table-container::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.2) !important; /* Yarı saydam gri asil renk */
-        border-radius: 10px !important; /* Yuvarlak kenarlar */
-        transition: background 0.3s ease;
+        background: rgba(128, 128, 128, 0) !important; 
+        border-radius: 10px !important; 
+        transition: background 0.3s ease-in-out !important;
+    }
+    
+    /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
+    .table-container:hover::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.25) !important; 
     }
     
     .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.4) !important; /* Üzerine gelindiğinde hafifçe koyulaşır */
+        background: rgba(128, 128, 128, 0.45) !important; 
     }
     
-    /* Firefox tarayıcılar için modern uyumluluk */
+    /* Üst ve alt taraftaki ok düğmelerini tamamen kaldırır */
+    .table-container::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    /* Firefox uyumluluğu */
     .table-container {
         scrollbar-width: thin !important;
-        scrollbar-color: rgba(128, 128, 128, 0.2) transparent !important;
+        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
+        transition: scrollbar-color 0.3s ease !important;
+    }
+    .table-container:hover {
+        scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important;
     }
     /* ========================================================= */
     
@@ -554,7 +571,7 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
-    # Online rozeti HTML'i (HTML Parser sızıntısı tamamen engellendi)
+    # Online rozeti HTML'i (Sızıntısız, tek dize)
     online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
