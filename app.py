@@ -243,17 +243,20 @@ st.markdown("""
         background: rgba(128, 128, 128, 0.45) !important; 
     }
     
-    /* Üst ve alt taraftaki ok düğmelerini KESİN VE RADİKAL OLARAK YOK EDER */
-    .table-container::-webkit-scrollbar-button,
-    .table-container::-webkit-scrollbar-button:vertical,
-    .table-container::-webkit-scrollbar-button:horizontal,
-    .table-container::-webkit-scrollbar-button:start,
-    .table-container::-webkit-scrollbar-button:end,
-    .table-container::-webkit-scrollbar-button:decrement,
-    .table-container::-webkit-scrollbar-button:increment {
+    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
+    /* Herhangi bir element altındaki tüm webkit kaydırma oklarını hedef alır */
+    ::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button,
+    ::-webkit-scrollbar-button:vertical,
+    ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start,
+    ::-webkit-scrollbar-button:end,
+    ::-webkit-scrollbar-button:decrement,
+    ::-webkit-scrollbar-button:increment {
         display: none !important;
         width: 0px !important;
         height: 0px !important;
+        size: 0px !important;
         background: transparent !important;
         border: none !important;
     }
