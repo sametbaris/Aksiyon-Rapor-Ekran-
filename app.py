@@ -573,10 +573,10 @@ if df_data is not None:
 # st.fragment sayesinde bu fonksiyon arka planda Streamlit'i tamamen 
 # yenilemeden (refresh yapmadan) sessizce tetikler.
 @st.fragment
-def auto_rerun_trigger(interval_seconds=60):
+def auto_rerun_trigger(interval_seconds=180):
     """
     Belirtilen saniye aralığıyla sayfayı arka planda sessizce rerun eder.
-    Varsayılan: 60 saniye (1 dakika). İhtiyacına göre değiştirebilirsin.
+    Varsayılan: 180 saniye (1 buçuk dakika). İhtiyacına göre değiştirebilirsin.
     """
     import time
     # Streamlit'in resmi zamanlayıcı aracı (Sessizce bekler)
