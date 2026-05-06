@@ -100,10 +100,10 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (KUSURSUZ NETLİK, SIFIR JITTER, MUHTEŞEM GÖLGE) =================
+# ================= CSS =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN KESKİN YAZI (ANTI-ALIASING) ZORLAMASI */
+    /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
     * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
@@ -114,17 +114,25 @@ st.markdown("""
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ: Sadece içindeki metinleri keskinleştir, dış katmanın pozisyonunu bozma! */
+    /* 2. MULTISELECT HD ÇÖZÜNÜRLÜK (HEM NET HEM DOĞRU YERDE) */
+    /* Dış katmanın pozisyonunu bozmadan sadece iç menüyü ekran kartına (GPU) devrediyoruz */
+    div[data-baseweb="popover"] > div,
+    ul[role="listbox"] {
+        transform: translateZ(0) !important;
+        backface-visibility: hidden !important;
+    }
+    
     div[data-baseweb="popover"] [role="option"],
     div[data-baseweb="popover"] [role="option"] span {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: geometricPrecision !important;
-        font-size: 14px !important;
+        font-size: 14.5px !important;
         font-weight: 500 !important;
+        letter-spacing: 0.2px !important;
     }
     
-    /* 2. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
+    /* 3. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
         width: 100%; 
         margin-top: 10px; 
@@ -138,7 +146,7 @@ st.markdown("""
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; /* Gölge için separate şart */
+        border-collapse: separate !important; 
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -147,10 +155,10 @@ st.markdown("""
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* 3. BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
+    /* 4. BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; /* Titremeyi engellemek için SIFIRDA kalmalı */
+        top: 0px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -159,13 +167,7 @@ st.markdown("""
         text-transform: uppercase; 
         font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
-        
-        /* SİHİRLİ DOKUNUŞ: 
-           İlk parametre (0 -2px 0) üstteki sızıntıyı boya atarak kapatır. 
-           İkinci parametre (0 8px 15px) alta muazzam bir 3D gölge vurur. 
-        */
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
