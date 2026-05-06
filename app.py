@@ -114,8 +114,19 @@ st.markdown("""
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* Menü Yazılarının Kalınlaştırılması */
-    div[data-baseweb="popover"] ul li { font-size: 14px !important; font-weight: 500 !important; }
+    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ: Popover menüsünü donanımsal olarak sabitle ve bulanıklığı bitir */
+    div[data-baseweb="popover"] {
+        transform: translateZ(0) !important;
+        backface-visibility: hidden !important;
+    }
+    div[data-baseweb="popover"] [role="option"],
+    div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: geometricPrecision !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
     
     /* 2. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
@@ -155,7 +166,7 @@ st.markdown("""
         
         /* SİHİRLİ DOKUNUŞ: 
            İlk parametre (0 -2px 0) üstteki sızıntıyı boya atarak kapatır. 
-           İkinci parametre (0 8px 12px) alta muazzam bir 3D gölge vurur. 
+           İkinci parametre (0 8px 15px) alta muazzam bir 3D gölge vurur. 
         */
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
         
