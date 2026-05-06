@@ -231,7 +231,7 @@ st.markdown("""
     .table-container::-webkit-scrollbar-thumb {
         background: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
-        transition: background 0.3s ease-in-out !important;
+        transition: background 0.25s ease-in-out !important;
     }
     
     /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
@@ -254,7 +254,7 @@ st.markdown("""
     .table-container {
         scrollbar-width: thin !important;
         scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.3s ease !important;
+        transition: scrollbar-color 0.25s ease-in-out !important;
     }
     .table-container:hover {
         scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important;
