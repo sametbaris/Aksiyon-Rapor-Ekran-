@@ -114,22 +114,24 @@ st.markdown("""
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* 2. MULTISELECT HD ÇÖZÜNÜRLÜK (HEM NET HEM DOĞRU YERDE) */
-    /* Dış katmanın pozisyonunu bozmadan sadece iç menüyü ekran kartına (GPU) devrediyoruz */
-    div[data-baseweb="popover"] > div,
-    ul[role="listbox"] {
-        transform: translateZ(0) !important;
+    /* 2. AÇILIR MENÜ (MULTISELECT) HD ÇÖZÜNÜRLÜK DÜZELTMESİ (Konum bozmadan!) */
+    div[data-baseweb="popover"] {
+        /* Transform kodunu SİLDİK, sadece GPU render'ını zorlayan backface kodunu koyduk */
         backface-visibility: hidden !important;
+        -webkit-backface-visibility: hidden !important;
     }
     
     div[data-baseweb="popover"] [role="option"],
     div[data-baseweb="popover"] [role="option"] span {
+        /* Tam olarak önceki "harika" çözünürlükteki ayarlar (virgüllü değerler ve esnemeler iptal edildi) */
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: geometricPrecision !important;
-        font-size: 14.5px !important;
+        font-size: 14px !important; 
         font-weight: 500 !important;
-        letter-spacing: 0.2px !important;
+        letter-spacing: 0px !important;
+        /* Ekstra keskinlik dokunuşu */
+        -webkit-text-stroke: 0.2px rgba(0,0,0,0.1) !important;
     }
     
     /* 3. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
@@ -146,7 +148,7 @@ st.markdown("""
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; 
+        border-collapse: separate !important; /* Gölge için separate şart */
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -158,7 +160,7 @@ st.markdown("""
     /* 4. BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; 
+        top: 0px !important; /* Titremeyi engellemek için SIFIRDA kalmalı */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
