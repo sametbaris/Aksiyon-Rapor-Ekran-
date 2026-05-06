@@ -94,22 +94,66 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS =================
+# ================= CSS (STİCKY HEADER EKLENDİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
-    .table-container { width: 100%; margin-top: 10px; overflow-x: auto; }
+    
+    /* Yapışkan Başlık İçin Konteyner Sınırları */
+    .table-container { 
+        width: 100%; 
+        margin-top: 10px; 
+        overflow-x: auto; 
+        max-height: 75vh; /* Dikey kaydırma çubuğunun tetiklenmesi için limit */
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0 8px; font-family: 'Inter', sans-serif; border: none; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
-    .custom-table th { color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px; padding: 10px 20px; text-align: center; }
+    
+    /* --- DONUK (STICKY) BAŞLIK SATIRI CSS --- */
+    .custom-table thead tr th { 
+        position: sticky; 
+        top: 0; 
+        background-color: var(--background-color, #ffffff); /* Temaya göre arka plan rengini otomatik alır */
+        z-index: 10; 
+        box-shadow: inset 0 -2px 0 #ddd; /* Alt çizgi efekti */
+    }
+    /* Streamlit karanlık modunda başlık arka planını korumak için */
+    @media (prefers-color-scheme: dark) {
+        .custom-table thead tr th {
+            background-color: #0e1117; /* Streamlit koyu arka plan rengi */
+            box-shadow: inset 0 -2px 0 #333;
+        }
+    }
+    
+    .custom-table th { color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px; padding: 12px 20px; text-align: center; }
     .custom-table td { padding: 4px 10px; text-align: center; border: none; white-space: nowrap; }
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
     
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
+    
+    /* Sayacı Şıklaştıran Badge Alanı */
+    .counter-badge {
+        text-align: center; 
+        color: var(--header-color); 
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px; 
+        background: var(--pill-default-bg); 
+        padding: 6px 20px; 
+        border-radius: 30px; 
+        display: block;
+        margin: 25px auto 10px auto;
+        width: fit-content;
+        letter-spacing: 0.5px;
+    }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
     div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
@@ -117,7 +161,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= GSPREAD KİMLİK DOĞRULAMA =================
+# ================= GZIP / GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -383,7 +427,7 @@ if df_data is not None:
         for x in df_data[alt_grup_col].dropna():
             v = str(x).strip()
             if v != "" and v not in gruplar: gruplar.append(v)
-        unique_gruplar = ["Tümü"] + gruplar
+            unique_gruplar = ["Tümü"] + gruplar
     else: unique_gruplar = ["Tümü"]
 
     col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
@@ -449,20 +493,22 @@ if df_data is not None:
             if col_name in price_cols:
                 worksheet.column_dimensions[col_letter].width = 12
                 for row in range(2, len(df_export) + 2):
-                    # #,##0.00 Excel'de binlik ayraçlı ve 2 virgüllü (1.234,56) formatını tetikler
                     worksheet.cell(row=row, column=excel_col_idx).number_format = '#,##0.00'
                     
             elif col_name == barcode_col:
                 worksheet.column_dimensions[col_letter].width = 16
                 for row in range(2, len(df_export) + 2):
-                    # Sadece 0 yazmak ondalıksız saf sayıyı verir (örn: 421020102030)
                     worksheet.cell(row=row, column=excel_col_idx).number_format = '0'
             else:
-                # Diğer sütunlara biraz nefes aldırıyoruz
                 worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
+
+    # --- TOPLAM ÜRÜN SAYACI ---
+    # Alt grup ve Barkod başlıklarının tasarım bütünlüğünü bozmamak adına counter-badge CSS sınıfı ile yazdırıldı.
+    total_products = len(df_data)
+    st.markdown(f'<div class="counter-badge">📋 Toplam {total_products} Ürün Listeleniyor</div>', unsafe_allow_html=True)
 
     display_styled_table(df_data, mapping)
