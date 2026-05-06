@@ -240,7 +240,7 @@ st.markdown("""
     }
     
     .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.25) !important; 
+        background: rgba(128, 128, 128, 0.10) !important; 
     }
     
     /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
@@ -268,7 +268,7 @@ st.markdown("""
         transition: scrollbar-color 0.25s ease-in-out !important;
     }
     .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important;
+        scrollbar-color: rgba(128, 128, 128, 0.10) transparent !important;
     }
     /* ========================================================= */
     
