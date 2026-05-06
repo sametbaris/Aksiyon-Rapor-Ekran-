@@ -513,9 +513,10 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
+    # Online rozeti HTML'ini tek parça ve sızıntısız hale getirdik
     online_badge = f"""
         <div class="online-badge-container">
-            <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00;"></span>
+            <span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span>
             <span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span>
         </div>
     """
