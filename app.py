@@ -114,11 +114,7 @@ st.markdown("""
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ: Popover menüsünü donanımsal olarak sabitle ve bulanıklığı bitir */
-    div[data-baseweb="popover"] {
-        transform: translateZ(0) !important;
-        backface-visibility: hidden !important;
-    }
+    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ: Sadece içindeki metinleri keskinleştir, dış katmanın pozisyonunu bozma! */
     div[data-baseweb="popover"] [role="option"],
     div[data-baseweb="popover"] [role="option"] span {
         -webkit-font-smoothing: antialiased !important;
