@@ -108,23 +108,29 @@ st.markdown("""
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
     /* ========================================================= */
-    /* AÇILIR MENÜ (MULTISELECT) KESİN BULANIKLIK ÇÖZÜMÜ         */
+    /* AÇILIR MENÜ (MULTISELECT) ANİMASYON VE BULANIKLIK ÇÖZÜMÜ  */
     /* ========================================================= */
     div[data-baseweb="popover"] {
-        /* Alt katmanlardaki sub-pixel dönüşümlerini düzleştirir */
-        transform-style: flat !important; 
+        /* Animasyon bitişindeki devir teslim bulanıklığını öldürür */
+        transition: none !important;
+        animation: none !important;
+        will-change: auto !important;
     }
     
-    div[data-baseweb="popover"] * {
-        /* Tüm yapay müdahaleleri silip tarayıcının doğal HD motorunu (ClearType) devreye sokar */
-        -webkit-font-smoothing: auto !important;
-        -moz-osx-font-smoothing: auto !important;
-        text-rendering: auto !important;
-        text-shadow: none !important;
-        -webkit-text-stroke: 0px !important;
+    div[data-baseweb="popover"] ul {
+        /* İç listeyi kalıcı olarak GPU'ya hapseder, metinler her zaman HD kalır */
+        transform: translateZ(0) !important;
+        backface-visibility: hidden !important;
+    }
+
+    div[data-baseweb="popover"] [role="option"],
+    div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
         font-family: inherit !important;
         font-size: 14px !important;
-        font-weight: 400 !important;
+        font-weight: 500 !important;
         letter-spacing: normal !important;
     }
     /* ========================================================= */
@@ -165,9 +171,6 @@ st.markdown("""
         font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         
-        /* İlk parametre (0 -2px 0) üstteki sızıntıyı boya atarak kapatır. 
-           İkinci parametre (0 8px 15px) alta muazzam bir 3D gölge vurur. 
-        */
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
         
         border-top: none !important;
