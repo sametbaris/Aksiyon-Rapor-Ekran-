@@ -215,7 +215,7 @@ st.markdown("""
     }
     
     /* ========================================================= */
-    /* HOVER DUYARLI VE OKSUZ ULTRA MİNİMAL SCROLLBAR            */
+    /* HOVER DUYARLI VE OKLARI KESİN OLARAK SİLİNMİŞ SCROLLBAR   */
     /* ========================================================= */
     /* Webkit (Chrome, Safari, Edge, Opera) */
     .table-container::-webkit-scrollbar {
@@ -243,11 +243,19 @@ st.markdown("""
         background: rgba(128, 128, 128, 0.45) !important; 
     }
     
-    /* Üst ve alt taraftaki ok düğmelerini tamamen kaldırır */
-    .table-container::-webkit-scrollbar-button {
+    /* Üst ve alt taraftaki ok düğmelerini KESİN VE RADİKAL OLARAK YOK EDER */
+    .table-container::-webkit-scrollbar-button,
+    .table-container::-webkit-scrollbar-button:vertical,
+    .table-container::-webkit-scrollbar-button:horizontal,
+    .table-container::-webkit-scrollbar-button:start,
+    .table-container::-webkit-scrollbar-button:end,
+    .table-container::-webkit-scrollbar-button:decrement,
+    .table-container::-webkit-scrollbar-button:increment {
         display: none !important;
-        width: 0 !important;
-        height: 0 !important;
+        width: 0px !important;
+        height: 0px !important;
+        background: transparent !important;
+        border: none !important;
     }
     
     /* Firefox uyumluluğu */
