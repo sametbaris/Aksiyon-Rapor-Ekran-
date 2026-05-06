@@ -103,13 +103,18 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
+    /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
+    * {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+    }
+
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
-    /* ========================================================= */
-    /* AÇILIR MENÜ (MULTISELECT) ANİMASYON VE BULANIKLIK ÇÖZÜMÜ  */
-    /* ========================================================= */
+    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
     div[data-baseweb="popover"] {
         transition: none !important;
         animation: none !important;
@@ -131,7 +136,6 @@ st.markdown("""
         font-weight: 500 !important;
         letter-spacing: normal !important;
     }
-    /* ========================================================= */
     
     /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
@@ -168,9 +172,7 @@ st.markdown("""
         text-transform: uppercase; 
         font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
-        
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
@@ -569,16 +571,22 @@ if df_data is not None:
     display_styled_table(df_data, mapping)
 
 # ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
-# st.fragment kullanılmadan, zamanlayıcı bittiğinde tüm sayfayı (veriyi çeken en üst satırlar dahil)
-# sessizce tetikleyen fonksiyon.
-def auto_rerun_trigger(interval_seconds=180):
+# HTML/JS Zamanlayıcı en alta eklendi. Running ikonu tamamen yok edildi!
+# 180000 milisaniye = 180 saniye (3 dakika)
+components.html(
     """
-    Belirtilen saniye aralığıyla tüm sayfayı sessizce rerun eder.
-    Böylece Google Sheets'ten verileri çeken load_and_merge_data() da baştan çalışır.
-    """
-    import time
-    time.sleep(interval_seconds)
-    st.rerun()
-
-# Tetikleyiciyi çalıştır (Her 180 saniyede bir arkada tetikler)
-auto_rerun_trigger(interval_seconds=180)
+    <script>
+    const parentWindow = window.parent;
+    setTimeout(() => {
+        // Streamlit'in kendi içindeki rerun tetikleyicisini sessizce uyandırır
+        const rerunButton = parentWindow.document.querySelector('.stApp [data-testid="stHeader"] button');
+        if (rerunButton) {
+            rerunButton.click();
+        } else {
+            // Alternatif olarak Streamlit penceresine rerun talimatı gönderir
+            parentWindow.location.reload();
+        }
+    }, 180000); 
+    </script>
+    """, height=0, width=0
+)
