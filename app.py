@@ -95,7 +95,7 @@ components.html(
                     shadowColor = "rgba(0, 0, 0, 0.15)"; 
                 }
                 
-                // CSS Değişkenlerini tüm dokümana enjekte ediyoruz (Gölge hilesi için)
+                // CSS Değişkenlerini tüm dokümana enjekte ediyoruz
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow-color', shadowColor);
                 
@@ -115,21 +115,27 @@ st.markdown("""
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
     /* ========================================================= */
-    /* AÇILIR MENÜ (POPOVER) VE FİLTRELER İÇİN HD KESKİNLİK AYARI */
+    /* ÇOKLU SEÇİM (MULTISELECT) VE DİĞER MENÜLER İÇİN HD NETLİK */
     /* ========================================================= */
-    div[data-baseweb="select"] *, 
-    div[data-baseweb="popover"] * {
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] *,
+    div[data-baseweb="select"],
+    div[data-baseweb="select"] * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: optimizeLegibility !important;
     }
-    div[data-baseweb="popover"] ul li span {
-        font-weight: 500 !important;
+    
+    div[data-baseweb="popover"] [role="option"],
+    div[data-baseweb="popover"] [role="option"] * {
         font-size: 14.5px !important;
-        letter-spacing: 0.3px !important;
-    }
-    div[data-baseweb="select"] span {
         font-weight: 500 !important;
+        letter-spacing: 0.2px !important;
+    }
+    
+    [data-testid="stMultiSelect"] span {
+        font-weight: 600 !important;
+        font-size: 14px !important;
     }
     /* ========================================================= */
 
@@ -142,9 +148,9 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         border: none !important;
         position: relative;
+        transform: translateZ(0); 
     }
     
-    /* İnce sızıntı boşluğunu mühürlemek için collapse (birleşik) zorunludur! */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
@@ -159,7 +165,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: -1px !important; /* En üst sızıntı boşluğunu fiziki olarak yutar */
+        top: 0px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -167,27 +173,28 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        background-color: var(--dynamic-bg-color, #ffffff) !important; /* Arkaplanı JS'den alır */
+        background-color: var(--dynamic-bg-color, #ffffff) !important; 
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.15) !important; /* Gölge için ayırıcı taban çizgisi */
+        background-clip: padding-box;
+        border-bottom: 1px solid rgba(128,128,128,0.15) !important; 
     }
     
-    /* KURTARICI HİLE: Pseudo-Element ile harika bir gölge yaratıyoruz */
+    /* Pseudo-Element ile Alt Gölge (Sızıntısız) */
     .custom-table thead th::after {
         content: '';
         position: absolute;
         left: 0;
         right: 0;
-        top: 100%; /* Hücrenin tam alt kenarından başlar */
-        height: 6px; /* Gölgenin uzunluğu */
+        top: 100%; 
+        height: 6px; 
         background: linear-gradient(to bottom, var(--dynamic-shadow-color, rgba(0,0,0,0.1)), transparent);
         pointer-events: none;
         opacity: 1;
     }
     
-    /* Hücreler ve Dikey Çizgilerin İptali */
+    /* Hücreler ve Çizgi İptali */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
