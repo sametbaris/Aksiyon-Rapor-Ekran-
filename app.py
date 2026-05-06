@@ -103,11 +103,12 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
+    /* 1. TÜM SAYFA İÇİN KESKİN YAZI (ANTI-ALIASING) ZORLAMASI */
     * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
+        /*optimizeLegibility bulanıklık yapabilir, geometricPrecision ile değiştirildi*/
+        text-rendering: geometricPrecision !important;
     }
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
@@ -116,22 +117,28 @@ st.markdown("""
     
     /* 2. AÇILIR MENÜ (MULTISELECT) HD ÇÖZÜNÜRLÜK DÜZELTMESİ (Konum bozmadan!) */
     div[data-baseweb="popover"] {
-        /* Transform kodunu SİLDİK, sadece GPU render'ını zorlayan backface kodunu koyduk */
+        /* GPU render'ını zorlayan backface kodunu koyduk */
         backface-visibility: hidden !important;
         -webkit-backface-visibility: hidden !important;
     }
     
     div[data-baseweb="popover"] [role="option"],
     div[data-baseweb="popover"] [role="option"] span {
-        /* Tam olarak önceki "harika" çözünürlükteki ayarlar (virgüllü değerler ve esnemeler iptal edildi) */
+        /* Netliği en üst seviyeye çıkaran agresif komutlar */
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: geometricPrecision !important;
+        text-rendering: geometricPrecision !important; /* Font şeklini korur, bulanıklığı önler */
+        
         font-size: 14px !important; 
         font-weight: 500 !important;
-        letter-spacing: 0px !important;
-        /* Ekstra keskinlik dokunuşu */
-        -webkit-text-stroke: 0.2px rgba(0,0,0,0.1) !important;
+        letter-spacing: -0.1px !important; /* Harfleri biraz yaklaştırıp netliği artırır */
+        
+        /* MUHTEŞEM KESKİNLİK SİHİRLERİ */
+        /* 1. Çok ince, saydam bir çizgi ile harf kenarlarını belirginleştir */
+        -webkit-text-stroke: 0.1px rgba(128,128,128,0.1) !important;
+        
+        /* 2. Tarayıcı piksel motorunu zorlayan mikroskobik gölge */
+        text-shadow: 0 0 0.1px rgba(0,0,0,0.2) !important;
     }
     
     /* 3. TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
