@@ -111,14 +111,12 @@ st.markdown("""
     /* AÇILIR MENÜ (MULTISELECT) ANİMASYON VE BULANIKLIK ÇÖZÜMÜ  */
     /* ========================================================= */
     div[data-baseweb="popover"] {
-        /* Animasyon bitişindeki devir teslim bulanıklığını öldürür */
         transition: none !important;
         animation: none !important;
         will-change: auto !important;
     }
     
     div[data-baseweb="popover"] ul {
-        /* İç listeyi kalıcı olarak GPU'ya hapseder, metinler her zaman HD kalır */
         transform: translateZ(0) !important;
         backface-visibility: hidden !important;
     }
@@ -149,7 +147,7 @@ st.markdown("""
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: separate !important; /* Gölge için separate şart */
+        border-collapse: separate !important; 
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -161,7 +159,7 @@ st.markdown("""
     /* BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
         position: sticky; 
-        top: 0px !important; /* Titremeyi engellemek için SIFIRDA kalmalı */
+        top: 0px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -322,7 +320,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=180)  # 900 yerine 180 (3 dakika) yaptık
+@st.cache_data(ttl=180)  # 3 dakikalık önbellek
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
@@ -569,17 +567,16 @@ if df_data is not None:
         st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
 
     display_styled_table(df_data, mapping)
-    # ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
-# st.fragment sayesinde bu fonksiyon arka planda Streamlit'i tamamen 
-# yenilemeden (refresh yapmadan) sessizce tetikler.
-@st.fragment
+
+# ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
+# st.fragment kullanılmadan, zamanlayıcı bittiğinde tüm sayfayı (veriyi çeken en üst satırlar dahil)
+# sessizce tetikleyen fonksiyon.
 def auto_rerun_trigger(interval_seconds=180):
     """
-    Belirtilen saniye aralığıyla sayfayı arka planda sessizce rerun eder.
-    Varsayılan: 180 saniye (1 buçuk dakika). İhtiyacına göre değiştirebilirsin.
+    Belirtilen saniye aralığıyla tüm sayfayı sessizce rerun eder.
+    Böylece Google Sheets'ten verileri çeken load_and_merge_data() da baştan çalışır.
     """
     import time
-    # Streamlit'in resmi zamanlayıcı aracı (Sessizce bekler)
     time.sleep(interval_seconds)
     st.rerun()
 
