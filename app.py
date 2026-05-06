@@ -236,11 +236,11 @@ st.markdown("""
     
     /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.25) !important; 
+        background: rgba(128, 128, 128, 0.10) !important; 
     }
     
     .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.45) !important; 
+        background: rgba(128, 128, 128, 0.25) !important; 
     }
     
     /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
