@@ -86,20 +86,22 @@ components.html(
                 let shadowColor = "";
                 
                 if (brightness < 128) {
-                    // Karanlık Tema
+                    // Karanlık Tema Gölgesi
                     logoCss = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.6)"; // Karanlık temaya uygun tok gölge
+                    shadowColor = "rgba(0, 0, 0, 0.8)"; 
                 } else {
-                    // Aydınlık Tema
+                    // Aydınlık Tema Gölgesi
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.08)"; // Aydınlık temaya uygun soft gölge
+                    shadowColor = "rgba(0, 0, 0, 0.15)"; 
                 }
                 
-                // CSS Değişkenlerini tüm dokümana enjekte ediyoruz (Gölge hilesi için)
-                parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
-                parentDoc.documentElement.style.setProperty('--dynamic-shadow-color', shadowColor);
-                
-                styleTag.innerHTML = logoCss;
+                // Başlığa (th) dinamik renk ve sadece AŞAĞI doğru vuran harika bir derinlik (box-shadow) ekliyoruz
+                // Üste vuran gölgeyi (-1px) minik bir mühür olarak kullanıyoruz
+                styleTag.innerHTML = logoCss + ` 
+                .custom-table thead th { 
+                    background-color: ${bgColor} !important; 
+                    box-shadow: 0 -1px 0 ${bgColor}, 0 10px 15px -5px ${shadowColor} !important; 
+                }`;
             }
         }, 500);
     } catch (e) {}
@@ -107,13 +109,24 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (HÜCRELER BİRLEŞTİRİLDİ, GÖLGE YENİDEN YARATILDI) =================
+# ================= CSS (MİLİMETRİK KAYMA VE ÇÖZÜNÜRLÜK DÜZELTİLDİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     .main-logo-container { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
     .main-system-logo { height: 60px; width: auto; object-fit: contain; }
     
+    /* Multiselect (Çoklu Seçim) Filtreleri için Yüksek Çözünürlük (Anti-Aliasing) */
+    div[data-baseweb="select"] *, div[role="listbox"] * {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+        font-weight: 500 !important;
+    }
+    div[role="listbox"] span {
+        font-size: 14.5px !important;
+    }
+
     .table-container { 
         width: 100%; 
         margin-top: 10px; 
@@ -122,14 +135,14 @@ st.markdown("""
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         border: none !important;
-        position: relative;
+        transform: translateZ(0); /* GPU ivmelenmesi ile scroll yaparken titremeyi/kaymayı önler */
     }
     
-    /* İnce sızıntı boşluğunu mühürlemek için collapse (birleşik) zorunludur! */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: collapse !important; 
+        border-collapse: separate !important; 
+        border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
     }
@@ -140,7 +153,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: -1px !important; /* En üst sızıntı boşluğunu fiziki olarak yutar */
+        top: 0px !important; /* -1px kaldırıldı, GPU ivmelenmesi ile tam 0'da kusursuz durur */
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -148,27 +161,12 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        background-color: var(--dynamic-bg-color, #ffffff) !important; /* Arkaplanı JS'den alır */
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.15) !important; /* Gölge için ayırıcı taban çizgisi */
+        border: none !important; 
+        background-clip: padding-box; /* Başlık arkaplanının dışarı sızmasını engeller */
+        border-bottom: 1px solid rgba(128,128,128,0.15) !important;
     }
     
-    /* KURTARICI HİLE: box-shadow iptal edildiği için Pseudo-Element ile harika bir gölge yaratıyoruz */
-    .custom-table thead th::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 100%; /* Hücrenin tam alt kenarından başlar */
-        height: 6px; /* Gölgenin uzunluğu */
-        background: linear-gradient(to bottom, var(--dynamic-shadow-color, rgba(0,0,0,0.1)), transparent);
-        pointer-events: none;
-        opacity: 1;
-    }
-    
-    /* Hücreler ve Dikey Çizgilerin İptali */
+    /* Satır Çizgileri ve İç Boşlukları */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
@@ -176,7 +174,7 @@ st.markdown("""
         border-top: none !important;
         border-left: none !important; 
         border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
+        border-bottom: 1px solid rgba(128,128,128,0.08) !important; 
     }
     
     .custom-table tbody tr:last-child td {
@@ -472,7 +470,6 @@ if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
     
-    # ------------------ ÇOKLU SEÇİM GÜVENLİK GÜNCELLEMESİ ------------------
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
         for x in df_data[alt_grup_col].dropna():
@@ -490,7 +487,7 @@ if df_data is not None:
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
     if filter_grup and alt_grup_col: 
-        if "Tümü" not in filter_grup: # Tümü kelimesi listeye karışırsa engeller
+        if "Tümü" not in filter_grup: 
             df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
             
     if filter_status != "Tümü":
