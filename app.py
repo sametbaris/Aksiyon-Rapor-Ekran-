@@ -583,5 +583,5 @@ def auto_rerun_trigger(interval_seconds=60):
     time.sleep(interval_seconds)
     st.rerun()
 
-# Tetikleyiciyi çalıştır (Her 60 saniyede bir arkada tetikler)
-auto_rerun_trigger(interval_seconds=60)
+# Tetikleyiciyi çalıştır (Her 180 saniyede bir arkada tetikler)
+auto_rerun_trigger(interval_seconds=180)
