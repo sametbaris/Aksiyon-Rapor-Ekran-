@@ -86,20 +86,20 @@ components.html(
                 let shadowColor = "";
                 
                 if (brightness < 128) {
-                    // Karanlık Tema
+                    // Karanlık Tema Gölgesi
                     logoCss = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.9)"; // Derin karanlık gölge
+                    shadowColor = "rgba(0, 0, 0, 0.8)"; 
                 } else {
-                    // Aydınlık Tema
+                    // Aydınlık Tema Gölgesi
                     logoCss = `.logo-dark { display: none !important; } .logo-light { display: inline-block !important; }`;
-                    shadowColor = "rgba(0, 0, 0, 0.12)"; // Aydınlık gölge
+                    shadowColor = "rgba(0, 0, 0, 0.15)"; 
                 }
                 
-                // Üste vuran boya gölgesi (0 -5px) ve alta vuran gerçek gölge (0 8px 12px)
+                // Başlığa (th) dinamik renk ve sadece AŞAĞI doğru vuran harika bir derinlik (box-shadow) ekliyoruz
                 styleTag.innerHTML = logoCss + ` 
                 .custom-table thead th { 
                     background-color: ${bgColor} !important; 
-                    box-shadow: 0 -5px 0 ${bgColor}, 0 8px 12px -4px ${shadowColor} !important; 
+                    box-shadow: 0 10px 15px -5px ${shadowColor} !important; 
                 }`;
             }
         }, 500);
@@ -108,7 +108,7 @@ components.html(
     """, height=0, width=0
 )
 
-# ================= CSS (DİKEY ÇİZGİLER SİLİNDİ, BOŞLUK MÜHÜRLENDİ) =================
+# ================= CSS (GÖLGE KURTARICI MİMARİ) =================
 st.markdown("""
 <style>
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
@@ -125,11 +125,12 @@ st.markdown("""
         border: none !important;
     }
     
-    /* Hücreleri tamamen birleştir (çatlakları kapatır) ve tüm çerçeveleri sil */
+    /* GÖLGE KURTARICI: collapse yerine separate kullanıp spacing'i sıfırlıyoruz. 
+       Böylece hücreler yapışık kalıyor ama gölge ezilmiyor! */
     .custom-table { 
         width: 100%; 
         table-layout: auto; 
-        border-collapse: collapse !important; 
+        border-collapse: separate !important; 
         border-spacing: 0 !important; 
         font-family: 'Inter', sans-serif; 
         border: none !important; 
@@ -141,7 +142,7 @@ st.markdown("""
     /* Sticky (Donuk) Başlık */
     .custom-table thead th { 
         position: sticky; 
-        top: -1px !important; /* Şeffaf boşluğun üstüne fiziksel olarak oturur! */
+        top: 0px !important; 
         z-index: 20; 
         padding: 14px 20px; 
         text-align: center;
@@ -149,22 +150,19 @@ st.markdown("""
         font-weight: 500; 
         text-transform: uppercase; 
         font-size: 11px;
-        border: none !important; /* Her türlü çizgiyi engeller */
-        border-bottom: 1px solid rgba(128,128,128,0.15) !important;
+        border: none !important; 
     }
     
-    /* Hücreler ve Dikey Çizgi Katliamı */
+    /* Satır Çizgileri ve İç Boşlukları */
     .custom-table td { 
         padding: 8px 10px; 
         text-align: center; 
         white-space: nowrap; 
-        border-top: none !important;
-        border-left: none !important; /* DİKEY ÇİZGİ İPTAL */
-        border-right: none !important; /* DİKEY ÇİZGİ İPTAL */
-        border-bottom: 1px solid rgba(128,128,128,0.06) !important; /* Çok soft yatay çizgi */
+        border: none !important;
+        border-bottom: 1px solid rgba(128,128,128,0.08) !important; /* Hafif yatay ayırıcı çizgi */
     }
     
-    /* Son satırın altındaki gereksiz çizgiyi sil */
+    /* Son satırın altındaki çizgiyi sil */
     .custom-table tbody tr:last-child td {
         border-bottom: none !important;
     }
