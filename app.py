@@ -181,7 +181,7 @@ st.markdown("""
     
     /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
-        width: 100%; margin-top: 10px; overflow: auto; max-height: 60vh; 
+        width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; 
         border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
     }
     
