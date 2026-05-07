@@ -77,7 +77,6 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -107,7 +106,6 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
     * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
@@ -116,7 +114,6 @@ st.markdown("""
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI (JS ÇAKIŞMASIZ) */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
     
@@ -124,213 +121,80 @@ st.markdown("""
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
-    .main-logo-container { 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 20px; 
-        flex-wrap: wrap;
-    }
+    .main-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .main-system-logo { height: 60px; width: auto; object-fit: contain; transition: height 0.3s; }
+    .main-title-text { margin: 0; display: inline-block; font-size: 2.2rem; font-weight: 700; transition: font-size 0.3s; }
     
-    .main-system-logo { 
-        height: 60px; 
-        width: auto; 
-        object-fit: contain; 
-        transition: height 0.3s;
-    }
+    .online-badge-container { display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); }
     
-    .main-title-text {
-        margin: 0; 
-        display: inline-block;
-        font-size: 2.2rem;
-        font-weight: 700;
-        transition: font-size 0.3s;
-    }
-    
-    .online-badge-container {
-        display: flex; 
-        align-items: center; 
-        gap: 6px; 
-        background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; 
-        border-radius: 20px; 
-        border: 1px solid rgba(0, 255, 0, 0.2); 
-    }
-    
-    /* TELEFONLAR (MOBİL EKRANLAR) İÇİN ÖZEL CSS MEDYA SORGUSU */
     @media (max-width: 768px) {
-        .main-logo-container {
-            flex-direction: column; 
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 8px;
-            width: 100%;
-        }
-        .main-system-logo {
-            height: 45px; 
-        }
-        .main-title-text {
-            font-size: 1.6rem; 
-        }
-        .online-badge-container {
-            margin-left: 0 !important; 
-            margin-top: 2px;
-        }
+        .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
+        .main-system-logo { height: 45px; }
+        .main-title-text { font-size: 1.6rem; }
+        .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
     }
     
-    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
-    div[data-baseweb="popover"] {
-        transition: none !important;
-        animation: none !important;
-        will-change: auto !important;
+    div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
+    div[data-baseweb="popover"] ul { transform: translateZ(0) !important; backface-visibility: hidden !important; }
+    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 14px !important;
+        font-weight: 500 !important; letter-spacing: normal !important;
     }
     
-    div[data-baseweb="popover"] ul {
-        transform: translateZ(0) !important;
-        backface-visibility: hidden !important;
-    }
-
-    div[data-baseweb="popover"] [role="option"],
-    div[data-baseweb="popover"] [role="option"] span {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-        font-family: inherit !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        letter-spacing: normal !important;
-    }
-    
-    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
-    .table-container { 
-        width: 100%; 
-        margin-top: 10px; 
-        overflow: auto; 
-        max-height: 75vh; 
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        border: none !important;
-    }
+    .table-container { width: 100%; margin-top: 10px; overflow: auto; max-height: 75vh; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important; }
     
     /* ========================================================= */
-    /* HOVER DUYARLI VE OKLARI KESİN OLARAK SİLİNMİŞ SCROLLBAR   */
+    /* HAYALET SCROLLBAR (ÇOK DÜŞÜK OPAKLIK, SIFIR RAHATSIZLIK)  */
     /* ========================================================= */
-    /* Webkit (Chrome, Safari, Edge, Opera) */
-    .table-container::-webkit-scrollbar {
-        width: 5px !important;  
-        height: 5px !important; 
-    }
+    .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+    .table-container::-webkit-scrollbar-track { background: transparent !important; }
     
-    .table-container::-webkit-scrollbar-track {
-        background: transparent !important; 
-    }
-    
-    /* Normal durumda scrollbar thumb'ı tamamen şeffaftır (görünmez) */
     .table-container::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
-        /* Çok yavaş (0.8s) ve smooth bir geçiş */
-        transition: background-color 0.25s ease-in-out !important;
     }
     
-    /* Tablo üzerine gelindiğinde (hover) çok hafif (0.25) belirginleşir */
+    /* Tablo üzerinde gezinirken %3 opaklık (Neredeyse görünmez) */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0.25) !important; 
+        background-color: rgba(128, 128, 128, 0.03) !important; 
     }
     
-    /* Direkt kaydırma çubuğunun üzerine gelindiğinde bir tık daha (0.15) belirginleşir */
+    /* Doğrudan scrollbar'a dokunulduğunda %10 opaklık */
     .table-container::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(128, 128, 128, 0.15) !important; 
+        background-color: rgba(128, 128, 128, 0.10) !important; 
     }
     
-    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    ::-webkit-scrollbar-button,
-    *::-webkit-scrollbar-button,
-    ::-webkit-scrollbar-button:vertical,
-    ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start,
-    ::-webkit-scrollbar-button:end,
-    ::-webkit-scrollbar-button:decrement,
-    ::-webkit-scrollbar-button:increment {
-        display: none !important;
-        width: 0px !important;
-        height: 0px !important;
-        size: 0px !important;
-        background: transparent !important;
-        border: none !important;
+    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
+        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    /* Firefox uyumluluğu */
-    .table-container {
-        scrollbar-width: thin !important;
-        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.8s ease-in-out !important;
-    }
-    .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.08) transparent !important;
-    }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
     /* ========================================================= */
     
-    .custom-table { 
-        width: 100%; 
-        table-layout: auto; 
-        border-collapse: separate !important; 
-        border-spacing: 0 !important; 
-        font-family: 'Inter', sans-serif; 
-        border: none !important; 
-    }
-    
+    .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
-        position: sticky; 
-        top: 0px !important; 
-        z-index: 20; 
-        padding: 14px 20px; 
-        text-align: center;
-        color: var(--header-color); 
-        font-weight: 500; 
-        text-transform: uppercase; 
-        font-size: 11px;
+        position: sticky; top: 0px !important; z-index: 20; padding: 14px 20px; text-align: center;
+        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
     }
     
-    .custom-table td { 
-        padding: 8px 10px; 
-        text-align: center; 
-        white-space: nowrap; 
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
-    }
-    
+    .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
-    
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
-    
-    /* BUTON STİLLERİ (FİLTRE TEMİZLE VE EXCEL) */
-    div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { 
-        width: 100%; 
-        border-radius: 20px; 
-        font-weight: 600; 
-        border: 1px solid #ddd; 
-    }
+    div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -338,10 +202,7 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     try:
         if "gcp_service_account" in st.secrets:
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
@@ -390,10 +251,8 @@ def track_user_presence():
             log_sheet = sh.worksheet("Ziyaretci_Log")
             now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
-            if cell:
-                log_sheet.update_cell(cell.row, 2, now_str)
-            else:
-                log_sheet.append_row([st.session_state.user_id, now_str])
+            if cell: log_sheet.update_cell(cell.row, 2, now_str)
+            else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
         
