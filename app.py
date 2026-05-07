@@ -12,6 +12,10 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 
+# ======= YENİ: STREAMLIT'IN RESMİ OTOMATİK YENİLEME KÜTÜPHANESİ =======
+# Pip install streamlit-autorefresh yapmayı veya requirements.txt'ye eklemeyi unutma!
+from streamlit_autorefresh import st_autorefresh
+
 # ================= SAYFA AYARLARI =================
 icon_path = os.path.join("logos", "sistem.png")
 st.set_page_config(
@@ -19,6 +23,10 @@ st.set_page_config(
     page_icon=icon_path if os.path.exists(icon_path) else "⚖️", 
     layout="wide"
 )
+
+# Arka planda Streamlit'i her 3 dakikada bir (180.000 milisaniye) güvenle yeniler.
+# Sayfayı zorla tazelemez, sadece Python kodunu tekrar koşturarak güncel veriyi çeker.
+st_autorefresh(interval=180000, limit=None, key="data_refresher")
 
 SHEET_ID = "17zVRiwyUYaaEAqyzNx0u7aMMncdgH81vrKbzqS9MHB4"
 MAPPING_FILE = "Aksiyon_Mapping.xlsx"
@@ -77,7 +85,6 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -111,13 +118,15 @@ st.markdown("""
     /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME          */
     /* ========================================================= */
     html, body, [class*="css"] {
-        font-size: 14px !important; /* Varsayılan metinleri küçültür */
+        font-size: 14px !important; 
     }
     
     .block-container {
-        max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
+        max-width: 100% !important; 
         padding-top: 1.5rem !important; 
         padding-bottom: 1rem !important;
+        padding-left: 1.5rem !important; 
+        padding-right: 1.5rem !important;
     }
     
     header[data-testid="stHeader"] {
@@ -134,7 +143,6 @@ st.markdown("""
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
     
@@ -142,22 +150,11 @@ st.markdown("""
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
-    .main-logo-container { 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 20px; 
-        flex-wrap: wrap;
-    }
-    
+    .main-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     .main-system-logo { height: 50px; width: auto; object-fit: contain; transition: height 0.3s; }
     .main-title-text { margin: 0; display: inline-block; font-size: 1.8rem; font-weight: 700; transition: font-size 0.3s; }
     
-    .online-badge-container {
-        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
-    }
+    .online-badge-container { display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); }
     
     @media (max-width: 768px) {
         .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
@@ -165,10 +162,7 @@ st.markdown("""
         .main-title-text { font-size: 1.4rem; }
         .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
         
-        .update-badge {
-            float: none !important; margin: 0 auto 15px auto !important;
-            width: fit-content !important; display: block !important;
-        }
+        .update-badge { float: none !important; margin: 0 auto 15px auto !important; width: fit-content !important; display: block !important; }
     }
     
     div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
@@ -179,34 +173,24 @@ st.markdown("""
         font-weight: 500 !important; letter-spacing: normal !important;
     }
     
-    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
-    .table-container { 
-        width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; 
-        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
-    }
+    .table-container { width: 100%; margin-top: 10px; overflow: auto; max-height: 75vh; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important; }
     
-    /* SCROLLBAR */
     .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
     .table-container::-webkit-scrollbar-track { background: transparent !important; }
-    
-    .table-container::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
-        transition: background-color 0.3s ease-in-out !important;
-    }
-    
-    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
-    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
+    .table-container::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; transition: background-color 0.8s ease-in-out !important; }
+    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.03) !important; }
+    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.10) !important; }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
     ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
         display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
-    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s; }
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
     .custom-table thead th { 
@@ -226,15 +210,10 @@ st.markdown("""
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
-    /* BUTON STİLLERİ */
-    div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { 
-        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px;
-    }
+    div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; }
     
     @media (max-width: 950px) and (orientation: landscape) {
-        div[data-testid="stButton"] button p,
-        div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
+        div[data-testid="stButton"] button p, div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
         div[data-testid="stButton"] button p::before { content: "🧹"; font-size: 16px !important; visibility: visible; }
         div[data-testid="stDownloadButton"] button p::before { content: "📥"; font-size: 16px !important; visibility: visible; }
     }
@@ -534,12 +513,12 @@ if df_data is not None:
     else: 
         gruplar = []
 
-    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.6, 2.2, 2.2, 1.4, 2.0])
+    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
     with col_grup: 
-        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
+        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü (Çoklu Seçim)", key="grup_val")
     with col_plat: 
         filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
     with col_stat: 
@@ -619,20 +598,3 @@ if df_data is not None:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
-
-# ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
-components.html(
-    """
-    <script>
-    const parentWindow = window.parent;
-    setTimeout(() => {
-        const rerunButton = parentWindow.document.querySelector('.stApp [data-testid="stHeader"] button');
-        if (rerunButton) {
-            rerunButton.click();
-        } else {
-            parentWindow.location.reload();
-        }
-    }, 180000); 
-    </script>
-    """, height=0, width=0
-)
