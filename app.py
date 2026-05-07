@@ -90,7 +90,8 @@ components.html(
                 }
                 
                 if (brightness < 128) {
-                    styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }`;
+                    /* Karanlık Modda invert olan logolara hover yapıldığında özel silüet gölgesi/parlaması (beyaz gölge) */
+                    styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; } .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }`;
                     parentDoc.documentElement.classList.add('dark-theme');
                     parentDoc.documentElement.classList.remove('light-theme');
                 } else {
@@ -207,8 +208,29 @@ st.markdown("""
     .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
-    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s; }
-    .header-logo:hover { transform: scale(1.15); }
+    
+    /* ========================================================= */
+    /* BAŞLIK LOGOLARI: LIFT & DROP-SHADOW (SİLÜET GÖLGESİ)      */
+    /* ========================================================= */
+    .header-logo { 
+        height: 26px; 
+        width: auto; 
+        max-width: 120px; 
+        object-fit: contain; 
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; 
+        will-change: transform, filter;
+    }
+    .header-logo:hover { 
+        transform: scale3d(1.15, 1.15, 1) translateZ(0); 
+        /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
+        filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.25)); 
+    }
+    
+    /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
+    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { 
+        filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; 
+    }
+    /* ========================================================= */
     
     .custom-table thead th { 
         position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center;
@@ -221,28 +243,28 @@ st.markdown("""
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
-    /* ========================================================= */
-    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
-    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
     .data-pill { 
         padding: 5px 12px; 
-        display: inline-block; 
+        display: inline-flex; 
+        align-items: center;
+        justify-content: center;
         border-radius: 20px; 
-        font-size: 13px;
-        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
-        transform: translateY(0);
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; 
+        font-size: 13px; 
+        line-height: 1.2; 
+        backface-visibility: hidden;
+        transform: scale3d(1, 1, 1) translateZ(0);
+        -webkit-font-smoothing: antialiased;
+        will-change: transform;
     }
     
     a.data-link:hover .data-pill { 
-        /* Elementi esnetmek/büyütmek yerine 3 piksel yukarı kaydır (Hata çözümü) */
-        transform: translateY(-3px); 
-        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
+        transform: scale3d(1.1, 1.1, 1) translateZ(0); 
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.2); 
         cursor: pointer; 
     }
-    /* ========================================================= */
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
@@ -403,8 +425,13 @@ def load_and_merge_data():
             
         df_fiyat = pd.DataFrame(data[1:], columns=data[0])
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
+        
+        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
-        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        if bc_col: 
+            df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        else:
+            df_fiyat["Barkod_Int"] = ""
         
         gsheet_bs_links = {}
         try:
@@ -428,8 +455,14 @@ def load_and_merge_data():
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
-            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
-            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
+            
+            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
+            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
+            if map_bc_col and map_bc_col in df_map.columns:
+                df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
+            else:
+                df_map["Barkod_Int"] = ""
+                
             wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws_map = wb_map.active
             headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
@@ -634,7 +667,7 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
