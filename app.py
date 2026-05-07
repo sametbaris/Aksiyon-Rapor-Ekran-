@@ -221,9 +221,29 @@ st.markdown("""
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
+    /* ========================================================= */
+    /* HÜCRE İÇİ HOVER EFEKTİ (GPU SABİTLEME VE YAZI TİTREMESİ)  */
+    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
-    .data-pill { padding: 5px 12px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; font-size: 13px; }
-    a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
+    
+    .data-pill { 
+        padding: 5px 12px; 
+        display: inline-block; 
+        border-radius: 20px; 
+        transition: all 0.3s ease; 
+        font-size: 13px; 
+        /* Büyüme (scale) animasyonunda yazının kalınlaşmasını ve titremesini engeller: */
+        backface-visibility: hidden;
+        transform: scale(1) translateZ(0);
+        -webkit-font-smoothing: antialiased;
+    }
+    
+    a.data-link:hover .data-pill { 
+        transform: scale(1.1) translateZ(0); 
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.2); 
+        cursor: pointer; 
+    }
+    /* ========================================================= */
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
@@ -615,12 +635,11 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
 
 # ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
-# requirements.txt dosyana mutlaka "streamlit-autorefresh" kütüphanesini eklemeyi unutma!
 st_autorefresh(interval=180000, limit=None, key="data_refresher")
