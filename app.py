@@ -233,7 +233,7 @@ st.markdown("""
         font-size: 13px;
         /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
         transform: translateY(0);
-        transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     
     a.data-link:hover .data-pill { 
