@@ -236,7 +236,7 @@ st.markdown("""
         position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center;
         color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
-        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
+        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 3px 5px -4px var(--dynamic-shadow, rgba(0,0,0,0.25)) !important;
         border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
     }
     
