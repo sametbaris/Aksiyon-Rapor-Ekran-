@@ -223,7 +223,7 @@ st.markdown("""
         width: 100%; 
         margin-top: 10px; 
         overflow: auto; 
-        max-height: 75vh; 
+        max-height: 70vh; 
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         border: none !important;
