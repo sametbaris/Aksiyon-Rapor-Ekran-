@@ -206,7 +206,7 @@ st.markdown("""
     .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
-    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.8s; }
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s; }
     .header-logo:hover { transform: scale(1.15); }
     
     .custom-table thead th { 
