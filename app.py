@@ -155,9 +155,9 @@ st.markdown("""
         border-radius: 10px !important; 
     }
     
-    /* Tablo üzerinde gezinirken %3 opaklık (Neredeyse görünmez) */
+    /* Tablo üzerinde gezinirken %25 opaklık (Neredeyse görünmez) */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0.03) !important; 
+        background-color: rgba(128, 128, 128, 0.10) !important; 
     }
     
     /* Doğrudan scrollbar'a dokunulduğunda %10 opaklık */
@@ -171,7 +171,7 @@ st.markdown("""
     }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.10) transparent !important; }
     /* ========================================================= */
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
