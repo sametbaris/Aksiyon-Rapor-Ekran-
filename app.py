@@ -229,39 +229,47 @@ st.markdown("""
     
     /* Normal durumda scrollbar thumb'ı tamamen şeffaftır (görünmez) */
     .table-container::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0) !important; 
+        background-color: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
-        transition: background 0.25s ease-in-out !important;
+        /* Çok yavaş (0.8s) ve smooth bir geçiş */
+        transition: background-color 0.8s ease-in-out !important;
     }
     
-    /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
+    /* Tablo üzerine gelindiğinde (hover) çok hafif (0.08) belirginleşir */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.10) !important; 
+        background-color: rgba(128, 128, 128, 0.08) !important; 
     }
     
+    /* Direkt kaydırma çubuğunun üzerine gelindiğinde bir tık daha (0.15) belirginleşir */
     .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.10) !important; 
+        background-color: rgba(128, 128, 128, 0.15) !important; 
     }
     
     /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    /* OK BUTONLARINI RADİKAL BİR ŞEKİLDE SIFIRLIYORUZ */
-    .table-container::-webkit-scrollbar-button {
+    ::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button,
+    ::-webkit-scrollbar-button:vertical,
+    ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start,
+    ::-webkit-scrollbar-button:end,
+    ::-webkit-scrollbar-button:decrement,
+    ::-webkit-scrollbar-button:increment {
         display: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        opacity: 0 !important;
+        width: 0px !important;
+        height: 0px !important;
+        size: 0px !important;
         background: transparent !important;
-        pointer-events: none !important;
+        border: none !important;
     }
-
+    
     /* Firefox uyumluluğu */
     .table-container {
         scrollbar-width: thin !important;
         scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.25s ease-in-out !important;
+        transition: scrollbar-color 0.8s ease-in-out !important;
     }
     .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.10) transparent !important;
+        scrollbar-color: rgba(128, 128, 128, 0.08) transparent !important;
     }
     /* ========================================================= */
     
@@ -623,6 +631,7 @@ if df_data is not None:
     else: 
         gruplar = []
 
+    # FİLTRE VE BUTON KOLONLARI
     col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
     
     with col_search: 
@@ -703,9 +712,9 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
-            st.download_button("📥 İndir", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
 
