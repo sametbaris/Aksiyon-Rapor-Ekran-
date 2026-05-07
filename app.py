@@ -77,7 +77,6 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -116,7 +115,7 @@ st.markdown("""
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI (JS ÇAKIŞMASIZ) */
+    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
     
@@ -124,7 +123,7 @@ st.markdown("""
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
+    /* MOBİL VE MASAÜSTÜ UYUMLU BAŞLIK KONTEYNERİ */
     .main-logo-container { 
         display: flex; 
         align-items: center; 
@@ -133,202 +132,71 @@ st.markdown("""
         flex-wrap: wrap;
     }
     
-    .main-system-logo { 
-        height: 60px; 
-        width: auto; 
-        object-fit: contain; 
-        transition: height 0.3s;
-    }
-    
-    .main-title-text {
-        margin: 0; 
-        display: inline-block;
-        font-size: 2.2rem;
-        font-weight: 700;
-        transition: font-size 0.3s;
-    }
+    .main-system-logo { height: 60px; width: auto; object-fit: contain; transition: height 0.3s; }
+    .main-title-text { margin: 0; display: inline-block; font-size: 2.2rem; font-weight: 700; transition: font-size 0.3s; }
     
     .online-badge-container {
-        display: flex; 
-        align-items: center; 
-        gap: 6px; 
-        background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; 
-        border-radius: 20px; 
-        border: 1px solid rgba(0, 255, 0, 0.2); 
+        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
+        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
     }
     
-    /* TELEFONLAR (MOBİL EKRANLAR) İÇİN ÖZEL CSS MEDYA SORGUSU */
     @media (max-width: 768px) {
-        .main-logo-container {
-            flex-direction: column; 
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 8px;
-            width: 100%;
-        }
-        .main-system-logo {
-            height: 45px; 
-        }
-        .main-title-text {
-            font-size: 1.6rem; 
-        }
-        .online-badge-container {
-            margin-left: 0 !important; 
-            margin-top: 2px;
-        }
+        .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
+        .main-system-logo { height: 45px; }
+        .main-title-text { font-size: 1.6rem; }
+        .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
     }
     
     /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
-    div[data-baseweb="popover"] {
-        transition: none !important;
-        animation: none !important;
-        will-change: auto !important;
+    div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
+    div[data-baseweb="popover"] ul { transform: translateZ(0) !important; backface-visibility: hidden !important; }
+    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 14px !important;
+        font-weight: 500 !important; letter-spacing: normal !important;
     }
     
-    div[data-baseweb="popover"] ul {
-        transform: translateZ(0) !important;
-        backface-visibility: hidden !important;
-    }
-
-    div[data-baseweb="popover"] [role="option"],
-    div[data-baseweb="popover"] [role="option"] span {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-        font-family: inherit !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        letter-spacing: normal !important;
-    }
-    
-    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
+    /* TABLO VE SCROLLBAR TASARIMI */
     .table-container { 
-        width: 100%; 
-        margin-top: 10px; 
-        overflow: auto; 
-        max-height: 75vh; 
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        border: none !important;
+        width: 100%; margin-top: 10px; overflow: auto; max-height: 75vh; 
+        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
     }
     
-    /* ========================================================= */
-    /* HOVER DUYARLI VE OKLARI KESİN OLARAK SİLİNMİŞ SCROLLBAR   */
-    /* ========================================================= */
-    /* Webkit (Chrome, Safari, Edge, Opera) */
-    .table-container::-webkit-scrollbar {
-        width: 5px !important;  
-        height: 5px !important; 
+    .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+    .table-container::-webkit-scrollbar-track { background: transparent !important; }
+    .table-container::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; transition: background 0.25s ease-in-out !important; }
+    .table-container:hover::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.25) !important; }
+    .table-container::-webkit-scrollbar-thumb:hover { background: rgba(128, 128, 128, 0.45) !important; }
+    
+    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
+        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    .table-container::-webkit-scrollbar-track {
-        background: transparent !important; 
-    }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.25s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important; }
     
-    /* Normal durumda scrollbar thumb'ı tamamen şeffaftır (görünmez) */
-    .table-container::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0) !important; 
-        border-radius: 10px !important; 
-        transition: background 0.25s ease-in-out !important;
-    }
-    
-    /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
-    .table-container:hover::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.25) !important; 
-    }
-    
-    .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.45) !important; 
-    }
-    
-    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    ::-webkit-scrollbar-button,
-    *::-webkit-scrollbar-button,
-    ::-webkit-scrollbar-button:vertical,
-    ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start,
-    ::-webkit-scrollbar-button:end,
-    ::-webkit-scrollbar-button:decrement,
-    ::-webkit-scrollbar-button:increment {
-        display: none !important;
-        width: 0px !important;
-        height: 0px !important;
-        size: 0px !important;
-        background: transparent !important;
-        border: none !important;
-    }
-    
-    /* Firefox uyumluluğu */
-    .table-container {
-        scrollbar-width: thin !important;
-        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.25s ease-in-out !important;
-    }
-    .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important;
-    }
-    /* ========================================================= */
-    
-    .custom-table { 
-        width: 100%; 
-        table-layout: auto; 
-        border-collapse: separate !important; 
-        border-spacing: 0 !important; 
-        font-family: 'Inter', sans-serif; 
-        border: none !important; 
-    }
-    
+    .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
-        position: sticky; 
-        top: 0px !important; 
-        z-index: 20; 
-        padding: 14px 20px; 
-        text-align: center;
-        color: var(--header-color); 
-        font-weight: 500; 
-        text-transform: uppercase; 
-        font-size: 11px;
+        position: sticky; top: 0px !important; z-index: 20; padding: 14px 20px; text-align: center;
+        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 11px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
     }
     
-    .custom-table td { 
-        padding: 8px 10px; 
-        text-align: center; 
-        white-space: nowrap; 
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
-    }
-    
+    .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
-    
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
-    
-    /* BUTON STİLLERİ (FİLTRE TEMİZLE VE EXCEL) */
-    div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { 
-        width: 100%; 
-        border-radius: 20px; 
-        font-weight: 600; 
-        border: 1px solid #ddd; 
-    }
+    div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -336,10 +204,7 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     try:
         if "gcp_service_account" in st.secrets:
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
@@ -388,10 +253,8 @@ def track_user_presence():
             log_sheet = sh.worksheet("Ziyaretci_Log")
             now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
-            if cell:
-                log_sheet.update_cell(cell.row, 2, now_str)
-            else:
-                log_sheet.append_row([st.session_state.user_id, now_str])
+            if cell: log_sheet.update_cell(cell.row, 2, now_str)
+            else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
         
@@ -419,12 +282,10 @@ def get_column_mapping(df):
                 return c
         return None
     return {
-        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
-        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
-        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
-        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
-        "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
-        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
+        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"), "Barkod": find_col("Barkod"), 
+        "Ürün Kodu": find_col("Kodu", exclude="Barkod"), "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
+        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"), "Teknosa": find_col("Teknosa"), 
+        "Vatan": find_col("Vatan"), "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
         "Amazon": find_col("Amazon")
     }
 
@@ -456,7 +317,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=180)  # 3 dakikalık önbellek
+@st.cache_data(ttl=180)  
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
@@ -586,21 +447,21 @@ def display_styled_table(df, mapping):
 # ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
-if "plat_val" not in st.session_state: st.session_state.plat_val = "Tümü"
-if "stat_val" not in st.session_state: st.session_state.stat_val = "Tümü"
+# Selectbox için None (boş) varsayılan değer yapıldı
+if "plat_val" not in st.session_state: st.session_state.plat_val = None
+if "stat_val" not in st.session_state: st.session_state.stat_val = None
 
 def reset_filters():
     st.session_state.search_val = ""
     st.session_state.grup_val = []
-    st.session_state.plat_val = "Tümü"
-    st.session_state.stat_val = "Tümü"
+    st.session_state.plat_val = None
+    st.session_state.stat_val = None
 
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
 
 with col_title:
     online_users = track_user_presence()
-    
     online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
@@ -629,8 +490,6 @@ if df_data is not None:
     else: 
         gruplar = []
 
-    # FİLTRE VE BUTON KOLONLARI
-    # col_btn_group daha geniş bırakılarak içine 2 ufak buton yerleştirilecek
     col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
     
     with col_search: 
@@ -638,9 +497,11 @@ if df_data is not None:
     with col_grup: 
         filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü (Çoklu Seçim)", key="grup_val")
     with col_plat: 
-        filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], key="plat_val")
+        # index=None ve placeholder ile düşük opaklık (Tümü) aktif edildi
+        filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
     with col_stat: 
-        filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"], key="stat_val")
+        # index=None ve placeholder ile düşük opaklık (Tümü) aktif edildi
+        filter_status = st.selectbox("🎨 Renge Göre", ["🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"], index=None, placeholder="Tümü", key="stat_val")
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
@@ -648,10 +509,12 @@ if df_data is not None:
         if "Tümü" not in filter_grup: 
             df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
             
-    if filter_status != "Tümü":
+    # filter_status artık boş değilse çalışacak (None kontrolü)
+    if filter_status:
         bs_col = mapping.get("Braun Shop")
         if bs_col:
-            p_list = [filter_platform] if filter_platform != "Tümü" else ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+            # filter_platform seçilmişse o, seçilmemişse hepsi
+            p_list = [filter_platform] if filter_platform else ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
             actual_cols = [mapping.get(p) for p in p_list]; actual_cols = [c for c in actual_cols if c] 
             def check_color(row):
                 bs_val = parse_price(row[bs_col])
@@ -673,13 +536,11 @@ if df_data is not None:
     export_cols = [real for label, real in mapping.items() if real in df_data.columns]
     df_export = df_data[export_cols].copy()
     
-    # 1. Fiyatları sayıya çevir
     price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
     price_cols = [mapping.get(p) for p in price_platforms if mapping.get(p) in df_export.columns]
     for col_name in price_cols:
         df_export[col_name] = df_export[col_name].apply(parse_price)
         
-    # 2. Barkod sütununu sayıya çevir (varsa)
     barcode_col = mapping.get("Barkod")
     if barcode_col and barcode_col in df_export.columns:
         def parse_barcode(v):
@@ -687,15 +548,12 @@ if df_data is not None:
             except: return v
         df_export[barcode_col] = df_export[barcode_col].apply(parse_barcode)
     
-    # 3. Excel oluştur ve hücre biçimlerini ayarla (Openpyxl)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_export.to_excel(writer, index=False, sheet_name='Aksiyon_Raporu')
-        
         workbook = writer.book
         worksheet = writer.sheets['Aksiyon_Raporu']
         
-        # Sütunları dolaşıp tek tek hücre formatlarını ve genişliklerini düzeltiyoruz
         for idx, col_name in enumerate(df_export.columns):
             excel_col_idx = idx + 1
             col_letter = openpyxl.utils.get_column_letter(excel_col_idx)
@@ -712,14 +570,13 @@ if df_data is not None:
             else:
                 worksheet.column_dimensions[col_letter].width = 15
                 
-    # 4. YENİ BUTON YERLEŞİMLERİ (Temizle ve Excel Yan Yana)
     with col_btn_group:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
-            st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            st.download_button("📥 İndir", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
 
