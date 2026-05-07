@@ -223,7 +223,7 @@ st.markdown("""
     .header-logo:hover { 
         transform: scale3d(1.15, 1.15, 1) translateZ(0); 
         /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
-        filter: drop-shadow(0px 4px 7px rgba(0,0,0,0.35)); 
+        filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.25)); 
     }
     
     /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
@@ -243,6 +243,9 @@ st.markdown("""
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
+    /* ========================================================= */
+    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
+    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
     .data-pill { 
@@ -251,20 +254,23 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         border-radius: 20px; 
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; 
-        font-size: 13px; 
-        line-height: 1.2; 
+        font-size: 13px;
+        line-height: 1.2;
+        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
+        transform: translateY(0);
+        transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         backface-visibility: hidden;
-        transform: scale3d(1, 1, 1) translateZ(0);
         -webkit-font-smoothing: antialiased;
         will-change: transform;
     }
     
     a.data-link:hover .data-pill { 
-        transform: scale3d(1.1, 1.1, 1) translateZ(0); 
-        box-shadow: 0px 6px 15px rgba(0,0,0,0.2); 
+        /* Elementi esnetmek/büyütmek yerine 2 piksel yukarı kaydır */
+        transform: translateY(-2px); 
+        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
         cursor: pointer; 
     }
+    /* ========================================================= */
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
