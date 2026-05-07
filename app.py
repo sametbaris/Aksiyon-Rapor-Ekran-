@@ -534,7 +534,7 @@ if df_data is not None:
     else: 
         gruplar = []
 
-    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
+    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.6, 2.2, 2.2, 1.4, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
