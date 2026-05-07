@@ -222,30 +222,24 @@ st.markdown("""
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     /* ========================================================= */
-    /* HÜCRE İÇİ HOVER EFEKTİ (DİKEY EZİLME VE TİTREME ÇÖZÜMÜ)   */
+    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
     /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
     .data-pill { 
         padding: 5px 12px; 
-        display: inline-flex; /* Metni dikeyde ezmeden tam merkeze kilitler */
-        align-items: center;
-        justify-content: center;
+        display: inline-block; 
         border-radius: 20px; 
-        /* 'all' yerine sadece boyut ve gölge animasyonu yapılıyor (titremeyi engeller) */
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; 
-        font-size: 13px; 
-        line-height: 1.2; /* Satır yüksekliğini sabitler */
-        backface-visibility: hidden;
-        /* 3D donanım hızlandırması ile her yönden eşit ve pürüzsüz büyür */
-        transform: scale3d(1, 1, 1) translateZ(0);
-        -webkit-font-smoothing: antialiased;
-        will-change: transform;
+        font-size: 13px;
+        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
+        transform: translateY(0);
+        transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     
     a.data-link:hover .data-pill { 
-        transform: scale3d(1.1, 1.1, 1) translateZ(0); 
-        box-shadow: 0px 6px 15px rgba(0,0,0,0.2); 
+        /* Elementi esnetmek/büyütmek yerine 2 piksel yukarı kaydır (Hata çözümü) */
+        transform: translateY(-2px); 
+        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
         cursor: pointer; 
     }
     /* ========================================================= */
@@ -640,7 +634,7 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
