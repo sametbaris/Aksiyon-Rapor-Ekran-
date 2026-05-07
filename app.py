@@ -118,6 +118,8 @@ st.markdown("""
         max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
         padding-top: 1.5rem !important; 
         padding-bottom: 1rem !important;
+        padding-left: 1.5rem !important; /* Kenar boşlukları minimize edildi */
+        padding-right: 1.5rem !important;
     }
     
     header[data-testid="stHeader"] {
