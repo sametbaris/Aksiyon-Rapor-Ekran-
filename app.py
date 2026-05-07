@@ -242,11 +242,11 @@ st.markdown("""
     }
     
     .table-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0.03) !important; 
+        background-color: rgba(128, 128, 128, 0.15) !important; 
     }
     
     .table-container::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(128, 128, 128, 0.10) !important; 
+        background-color: rgba(128, 128, 128, 0.25) !important; 
     }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
@@ -255,7 +255,7 @@ st.markdown("""
     }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     /* ========================================================= */
     
     .custom-table { 
