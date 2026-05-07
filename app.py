@@ -194,8 +194,8 @@ st.markdown("""
         transition: background-color 0.8s ease-in-out !important;
     }
     
-    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.03) !important; }
-    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.10) !important; }
+    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
+    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
     ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
@@ -203,10 +203,10 @@ st.markdown("""
     }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
-    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.8s; }
     .header-logo:hover { transform: scale(1.15); }
     
     .custom-table thead th { 
