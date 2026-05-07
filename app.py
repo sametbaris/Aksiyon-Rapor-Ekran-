@@ -232,12 +232,12 @@ st.markdown("""
         background-color: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
         /* Çok yavaş (0.8s) ve smooth bir geçiş */
-        transition: background-color 0.8s ease-in-out !important;
+        transition: background-color 0.25s ease-in-out !important;
     }
     
-    /* Tablo üzerine gelindiğinde (hover) çok hafif (0.08) belirginleşir */
+    /* Tablo üzerine gelindiğinde (hover) çok hafif (0.25) belirginleşir */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0.08) !important; 
+        background-color: rgba(128, 128, 128, 0.25) !important; 
     }
     
     /* Direkt kaydırma çubuğunun üzerine gelindiğinde bir tık daha (0.15) belirginleşir */
