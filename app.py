@@ -191,7 +191,7 @@ st.markdown("""
     
     .table-container::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
-        transition: background-color 0.8s ease-in-out !important;
+        transition: background-color 0.3s ease-in-out !important;
     }
     
     .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
