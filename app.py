@@ -107,30 +107,34 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    /* 1. TÜM SAYFA İÇİN KESKİN YAZI ZORLAMASI */
+    /* ========================================================= */
+    /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME          */
+    /* ========================================================= */
+    html, body, [class*="css"] {
+        font-size: 14px !important; /* Varsayılan metinleri küçültür */
+    }
+    
+    .block-container {
+        max-width: 95% !important; /* Ekran genişliğini maksimuma çeker */
+        padding-top: 1.5rem !important; 
+        padding-bottom: 1rem !important;
+    }
+    
+    header[data-testid="stHeader"] {
+        height: 2.5rem !important;
+        background: transparent !important; 
+    }
+    /* ========================================================= */
+
     * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: optimizeLegibility !important;
     }
 
-    /* ========================================================= */
-    /* STREAMLIT'IN VARSAYILAN ÜST BOŞLUKLARINI SIFIRLAMA        */
-    /* ========================================================= */
-    .block-container {
-        padding-top: 1.5rem !important; /* Üstteki gereksiz boşluğu siler */
-        padding-bottom: 1rem !important;
-    }
-    
-    header[data-testid="stHeader"] {
-        height: 2.5rem !important;
-        background: transparent !important; /* Üst barı şeffaf yapar */
-    }
-    /* ========================================================= */
-
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI (JS ÇAKIŞMASIZ) */
+    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
     
@@ -147,107 +151,51 @@ st.markdown("""
         flex-wrap: wrap;
     }
     
-    .main-system-logo { 
-        height: 60px; 
-        width: auto; 
-        object-fit: contain; 
-        transition: height 0.3s;
-    }
-    
-    .main-title-text {
-        margin: 0; 
-        display: inline-block;
-        font-size: 2.2rem;
-        font-weight: 700;
-        transition: font-size 0.3s;
-    }
+    .main-system-logo { height: 50px; width: auto; object-fit: contain; transition: height 0.3s; }
+    .main-title-text { margin: 0; display: inline-block; font-size: 1.8rem; font-weight: 700; transition: font-size 0.3s; }
     
     .online-badge-container {
-        display: flex; 
-        align-items: center; 
-        gap: 6px; 
-        background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; 
-        border-radius: 20px; 
-        border: 1px solid rgba(0, 255, 0, 0.2); 
+        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
+        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
     }
     
-    /* TELEFONLAR (MOBİL EKRANLAR) İÇİN ÖZEL CSS MEDYA SORGUSU */
     @media (max-width: 768px) {
-        .main-logo-container {
-            flex-direction: column; 
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 8px;
-            width: 100%;
-        }
-        .main-system-logo { height: 45px; }
-        .main-title-text { font-size: 1.6rem; }
+        .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
+        .main-system-logo { height: 40px; }
+        .main-title-text { font-size: 1.4rem; }
         .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
         
-        /* GÜNCELLEME KUTUCUĞUNU DİKEYDE ORTALA */
         .update-badge {
-            float: none !important;
-            margin: 0 auto 15px auto !important;
-            width: fit-content !important;
-            display: block !important;
+            float: none !important; margin: 0 auto 15px auto !important;
+            width: fit-content !important; display: block !important;
         }
     }
     
-    /* MULTISELECT BULANIKLIK ÇÖZÜMÜ */
-    div[data-baseweb="popover"] {
-        transition: none !important;
-        animation: none !important;
-        will-change: auto !important;
-    }
-    
-    div[data-baseweb="popover"] ul {
-        transform: translateZ(0) !important;
-        backface-visibility: hidden !important;
-    }
-
-    div[data-baseweb="popover"] [role="option"],
-    div[data-baseweb="popover"] [role="option"] span {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-        font-family: inherit !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        letter-spacing: normal !important;
+    div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
+    div[data-baseweb="popover"] ul { transform: translateZ(0) !important; backface-visibility: hidden !important; }
+    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 13px !important;
+        font-weight: 500 !important; letter-spacing: normal !important;
     }
     
     /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
     .table-container { 
-        width: 100%; 
-        margin-top: 10px; 
-        overflow: auto; 
-        max-height: 70vh; 
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        border: none !important;
+        width: 100%; margin-top: 10px; overflow: auto; max-height: 75vh; 
+        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
     }
     
-    /* ========================================================= */
-    /* HAYALET SCROLLBAR (ÇOK DÜŞÜK OPAKLIK, SIFIR RAHATSIZLIK)  */
-    /* ========================================================= */
+    /* SCROLLBAR */
     .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
     .table-container::-webkit-scrollbar-track { background: transparent !important; }
     
     .table-container::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0) !important; 
-        border-radius: 10px !important; 
+        background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
         transition: background-color 0.8s ease-in-out !important;
     }
     
-    .table-container:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0.15) !important; 
-    }
-    
-    .table-container::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(128, 128, 128, 0.25) !important; 
-    }
+    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.03) !important; }
+    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.10) !important; }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
     ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
@@ -255,84 +203,40 @@ st.markdown("""
     }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
-    /* ========================================================= */
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
     
-    .custom-table { 
-        width: 100%; 
-        table-layout: auto; 
-        border-collapse: separate !important; 
-        border-spacing: 0 !important; 
-        font-family: 'Inter', sans-serif; 
-        border: none !important; 
-    }
-    
-    .header-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
+    .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.2s; }
     .header-logo:hover { transform: scale(1.15); }
     
-    /* BAŞLIK SATIRI (SIFIR SIZINTI VE ÇİFT GÖLGE) */
     .custom-table thead th { 
-        position: sticky; 
-        top: 0px !important; 
-        z-index: 20; 
-        padding: 14px 20px; 
-        text-align: center;
-        color: var(--header-color); 
-        font-weight: 500; 
-        text-transform: uppercase; 
-        font-size: 11px;
+        position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center;
+        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
     }
     
-    .custom-table td { 
-        padding: 8px 10px; 
-        text-align: center; 
-        white-space: nowrap; 
-        border-top: none !important;
-        border-left: none !important; 
-        border-right: none !important; 
-        border-bottom: 1px solid rgba(128,128,128,0.06) !important; 
-    }
-    
+    .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
-    .data-pill { padding: 6px 14px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; }
-    
+    .data-pill { padding: 5px 12px; display: inline-block; border-radius: 20px; transition: all 0.3s ease; font-size: 13px; }
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
-    .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
+    .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
-    /* BUTON STİLLERİ (FİLTRE TEMİZLE VE EXCEL) */
+    /* BUTON STİLLERİ */
     div[data-testid="stDownloadButton"] button, 
     div[data-testid="stButton"] button { 
-        width: 100%; 
-        border-radius: 20px; 
-        font-weight: 600; 
-        border: 1px solid #ddd; 
+        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px;
     }
     
-    /* SADECE TELEFON YATAY (LANDSCAPE) MODA GEÇTİĞİNDE BUTON YAZILARINI İKONA ÇEVİRİR */
     @media (max-width: 950px) and (orientation: landscape) {
         div[data-testid="stButton"] button p,
-        div[data-testid="stDownloadButton"] button p {
-            font-size: 0px !important;
-        }
-        div[data-testid="stButton"] button p::before {
-            content: "🧹";
-            font-size: 18px !important;
-            visibility: visible;
-        }
-        div[data-testid="stDownloadButton"] button p::before {
-            content: "📥";
-            font-size: 18px !important;
-            visibility: visible;
-        }
+        div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
+        div[data-testid="stButton"] button p::before { content: "🧹"; font-size: 16px !important; visibility: visible; }
+        div[data-testid="stDownloadButton"] button p::before { content: "📥"; font-size: 16px !important; visibility: visible; }
     }
     
     .logo-dark { display: none; }
@@ -457,7 +361,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=180)  # 3 dakikalık önbellek
+@st.cache_data(ttl=180)  
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
@@ -541,7 +445,7 @@ def display_styled_table(df, mapping):
             count_html = ""
             if label in pazaryerleri:
                 valid_count = sum(1 for v in df[real] if parse_price(v) is not None)
-                count_html = f'<div style="font-size: 11px; color: var(--header-color); margin-top: 6px; font-weight: 700; letter-spacing: 0.5px; text-transform: none;">{valid_count} Ürün</div>'
+                count_html = f'<div style="font-size: 10px; color: var(--header-color); margin-top: 5px; font-weight: 700; letter-spacing: 0.5px; text-transform: none;">{valid_count} Ürün</div>'
 
             logo_pair = LOGOS.get(label)
             plat_url = PLATFORM_LINKS.get(label)
@@ -602,7 +506,7 @@ col_title, col_update = st.columns([3, 1])
 with col_title:
     online_users = track_user_presence()
     
-    online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
+    online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 11px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
         l_sys = SYSTEM_LOGO["light"]
@@ -630,7 +534,7 @@ if df_data is not None:
     else: 
         gruplar = []
 
-    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 2.2, 2.2, 1.8, 2.0])
+    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
@@ -707,7 +611,7 @@ if df_data is not None:
                 worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn_group:
-        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
             st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
