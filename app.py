@@ -236,15 +236,14 @@ st.markdown("""
     
     /* Tablo üzerine gelindiğinde (hover) ince şerit belirginleşir */
     .table-container:hover::-webkit-scrollbar-thumb {
-        background: rgba(128, 128, 128, 0.10) !important; 
+        background: rgba(128, 128, 128, 0.25) !important; 
     }
     
     .table-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(128, 128, 128, 0.10) !important; 
+        background: rgba(128, 128, 128, 0.45) !important; 
     }
     
     /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    /* Herhangi bir element altındaki tüm webkit kaydırma oklarını hedef alır */
     ::-webkit-scrollbar-button,
     *::-webkit-scrollbar-button,
     ::-webkit-scrollbar-button:vertical,
@@ -268,7 +267,7 @@ st.markdown("""
         transition: scrollbar-color 0.25s ease-in-out !important;
     }
     .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.10) transparent !important;
+        scrollbar-color: rgba(128, 128, 128, 0.25) transparent !important;
     }
     /* ========================================================= */
     
@@ -321,7 +320,15 @@ st.markdown("""
     a.data-link:hover .data-pill { transform: scale(1.1); box-shadow: 0px 6px 15px rgba(0,0,0,0.2); cursor: pointer; }
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 12px; background: var(--pill-default-bg); padding: 6px 16px; border-radius: 30px; display: inline-block; float: right; margin-top: 15px; }
-    div[data-testid="stDownloadButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; }
+    
+    /* BUTON STİLLERİ (FİLTRE TEMİZLE VE EXCEL) */
+    div[data-testid="stDownloadButton"] button, 
+    div[data-testid="stButton"] button { 
+        width: 100%; 
+        border-radius: 20px; 
+        font-weight: 600; 
+        border: 1px solid #ddd; 
+    }
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -576,13 +583,24 @@ def display_styled_table(df, mapping):
         html += '</tr>'
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
+# ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
+if "search_val" not in st.session_state: st.session_state.search_val = ""
+if "grup_val" not in st.session_state: st.session_state.grup_val = []
+if "plat_val" not in st.session_state: st.session_state.plat_val = "Tümü"
+if "stat_val" not in st.session_state: st.session_state.stat_val = "Tümü"
+
+def reset_filters():
+    st.session_state.search_val = ""
+    st.session_state.grup_val = []
+    st.session_state.plat_val = "Tümü"
+    st.session_state.stat_val = "Tümü"
+
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
 
 with col_title:
     online_users = track_user_presence()
     
-    # Online rozeti HTML'i (Sızıntısız, tek dize)
     online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 13px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
 
     if SYSTEM_LOGO["light"]:
@@ -611,11 +629,18 @@ if df_data is not None:
     else: 
         gruplar = []
 
-    col_search, col_grup, col_plat, col_stat, col_btn = st.columns([2.5, 2, 2, 2.5, 1.5])
-    with col_search: search = st.text_input("🔍 Ürün Ara...")
-    with col_grup: filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü (Çoklu Seçim)")
-    with col_plat: filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"])
-    with col_stat: filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"])
+    # FİLTRE VE BUTON KOLONLARI
+    # col_btn_group daha geniş bırakılarak içine 2 ufak buton yerleştirilecek
+    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.2, 1.8, 1.8, 2.2, 2.0])
+    
+    with col_search: 
+        search = st.text_input("🔍 Ürün Ara...", key="search_val")
+    with col_grup: 
+        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü (Çoklu Seçim)", key="grup_val")
+    with col_plat: 
+        filter_platform = st.selectbox("🛒 Platform", ["Tümü", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], key="plat_val")
+    with col_stat: 
+        filter_status = st.selectbox("🎨 Renge Göre", ["Tümü", "🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"], key="stat_val")
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
@@ -687,9 +712,14 @@ if df_data is not None:
             else:
                 worksheet.column_dimensions[col_letter].width = 15
                 
-    with col_btn:
+    # 4. YENİ BUTON YERLEŞİMLERİ (Temizle ve Excel Yan Yana)
+    with col_btn_group:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", True)
+        btn_clear, btn_excel = st.columns([1, 1])
+        with btn_clear:
+            st.button("🧹 Temizle", on_click=reset_filters, use_container_width=True)
+        with btn_excel:
+            st.download_button("📥 İndir", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
 
