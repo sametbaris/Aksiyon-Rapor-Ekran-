@@ -237,8 +237,8 @@ st.markdown("""
     }
     
     a.data-link:hover .data-pill { 
-        /* Elementi esnetmek/büyütmek yerine 2 piksel yukarı kaydır (Hata çözümü) */
-        transform: translateY(-2px); 
+        /* Elementi esnetmek/büyütmek yerine 3 piksel yukarı kaydır (Hata çözümü) */
+        transform: translateY(-3px); 
         box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
         cursor: pointer; 
     }
