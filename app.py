@@ -222,24 +222,29 @@ st.markdown("""
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     /* ========================================================= */
-    /* HÜCRE İÇİ HOVER EFEKTİ (GPU SABİTLEME VE YAZI TİTREMESİ)  */
+    /* HÜCRE İÇİ HOVER EFEKTİ (DİKEY EZİLME VE TİTREME ÇÖZÜMÜ)   */
     /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
     .data-pill { 
         padding: 5px 12px; 
-        display: inline-block; 
+        display: inline-flex; /* Metni dikeyde ezmeden tam merkeze kilitler */
+        align-items: center;
+        justify-content: center;
         border-radius: 20px; 
-        transition: all 0.3s ease; 
+        /* 'all' yerine sadece boyut ve gölge animasyonu yapılıyor (titremeyi engeller) */
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; 
         font-size: 13px; 
-        /* Büyüme (scale) animasyonunda yazının kalınlaşmasını ve titremesini engeller: */
+        line-height: 1.2; /* Satır yüksekliğini sabitler */
         backface-visibility: hidden;
-        transform: scale(1) translateZ(0);
+        /* 3D donanım hızlandırması ile her yönden eşit ve pürüzsüz büyür */
+        transform: scale3d(1, 1, 1) translateZ(0);
         -webkit-font-smoothing: antialiased;
+        will-change: transform;
     }
     
     a.data-link:hover .data-pill { 
-        transform: scale(1.1) translateZ(0); 
+        transform: scale3d(1.1, 1.1, 1) translateZ(0); 
         box-shadow: 0px 6px 15px rgba(0,0,0,0.2); 
         cursor: pointer; 
     }
@@ -404,13 +409,8 @@ def load_and_merge_data():
             
         df_fiyat = pd.DataFrame(data[1:], columns=data[0])
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
-        
-        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
-        if bc_col: 
-            df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
-        else:
-            df_fiyat["Barkod_Int"] = ""
+        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
         
         gsheet_bs_links = {}
         try:
@@ -434,14 +434,8 @@ def load_and_merge_data():
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
-            
-            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
-            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
-            if map_bc_col and map_bc_col in df_map.columns:
-                df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
-            else:
-                df_map["Barkod_Int"] = ""
-                
+            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Ürün Barkodu")
+            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws_map = wb_map.active
             headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
@@ -646,7 +640,7 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
