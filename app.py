@@ -115,7 +115,7 @@ st.markdown("""
     }
     
     .block-container {
-        max-width: 95% !important; /* Ekran genişliğini maksimuma çeker */
+        max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
         padding-top: 1.5rem !important; 
         padding-bottom: 1rem !important;
     }
