@@ -114,6 +114,20 @@ st.markdown("""
         text-rendering: optimizeLegibility !important;
     }
 
+    /* ========================================================= */
+    /* STREAMLIT'IN VARSAYILAN ÜST BOŞLUKLARINI SIFIRLAMA        */
+    /* ========================================================= */
+    .block-container {
+        padding-top: 1.5rem !important; /* Üstteki gereksiz boşluğu siler */
+        padding-bottom: 1rem !important;
+    }
+    
+    header[data-testid="stHeader"] {
+        height: 2.5rem !important;
+        background: transparent !important; /* Üst barı şeffaf yapar */
+    }
+    /* ========================================================= */
+
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
     /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI (JS ÇAKIŞMASIZ) */
@@ -227,42 +241,21 @@ st.markdown("""
         transition: background-color 0.8s ease-in-out !important;
     }
     
-    /* Tablo üzerinde gezinirken %3 opaklık (Neredeyse görünmez) */
     .table-container:hover::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0.03) !important; 
     }
     
-    /* Doğrudan scrollbar'a dokunulduğunda %10 opaklık */
     .table-container::-webkit-scrollbar-thumb:hover {
         background-color: rgba(128, 128, 128, 0.10) !important; 
     }
     
-    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    ::-webkit-scrollbar-button,
-    *::-webkit-scrollbar-button,
-    ::-webkit-scrollbar-button:vertical,
-    ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start,
-    ::-webkit-scrollbar-button:end,
-    ::-webkit-scrollbar-button:decrement,
-    ::-webkit-scrollbar-button:increment {
-        display: none !important;
-        width: 0px !important;
-        height: 0px !important;
-        size: 0px !important;
-        background: transparent !important;
-        border: none !important;
+    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
+        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    /* Firefox uyumluluğu */
-    .table-container {
-        scrollbar-width: thin !important;
-        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.8s ease-in-out !important;
-    }
-    .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important;
-    }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
     /* ========================================================= */
     
     .custom-table { 
@@ -398,10 +391,8 @@ def track_user_presence():
             log_sheet = sh.worksheet("Ziyaretci_Log")
             now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
-            if cell:
-                log_sheet.update_cell(cell.row, 2, now_str)
-            else:
-                log_sheet.append_row([st.session_state.user_id, now_str])
+            if cell: log_sheet.update_cell(cell.row, 2, now_str)
+            else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
         
