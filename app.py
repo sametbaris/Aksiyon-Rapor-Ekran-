@@ -202,7 +202,7 @@ st.markdown("""
         display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
     .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
