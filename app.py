@@ -223,7 +223,7 @@ st.markdown("""
     .header-logo:hover { 
         transform: scale3d(1.15, 1.15, 1) translateZ(0); 
         /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
-        filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.25)); 
+        filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.15)); 
     }
     
     /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
