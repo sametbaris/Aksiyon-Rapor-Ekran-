@@ -215,26 +215,17 @@ st.markdown("""
     }
     
     /* ========================================================= */
-    /* HOVER DUYARLI VE OKLARI KESİN OLARAK SİLİNMİŞ SCROLLBAR   */
+    /* HAYALET SCROLLBAR (ÇOK DÜŞÜK OPAKLIK, SIFIR RAHATSIZLIK)  */
     /* ========================================================= */
-    /* Webkit (Chrome, Safari, Edge, Opera) */
-    .table-container::-webkit-scrollbar {
-        width: 5px !important;  
-        height: 5px !important; 
-    }
+    .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+    .table-container::-webkit-scrollbar-track { background: transparent !important; }
     
-    .table-container::-webkit-scrollbar-track {
-        background: transparent !important; 
-    }
-    
-    /* Normal durumda scrollbar thumb'ı tamamen şeffaftır (görünmez) */
     .table-container::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
-        transition: background-color 0.8s ease-in-out !important;
     }
     
-    /* Tablo üzerine gelindiğinde (hover) çok hafif (0.03) belirginleşir */
+    /* Tablo üzerinde gezinirken %3 opaklık (Neredeyse görünmez) */
     .table-container:hover::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0.03) !important; 
     }
@@ -244,32 +235,13 @@ st.markdown("""
         background-color: rgba(128, 128, 128, 0.10) !important; 
     }
     
-    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
-    ::-webkit-scrollbar-button,
-    *::-webkit-scrollbar-button,
-    ::-webkit-scrollbar-button:vertical,
-    ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start,
-    ::-webkit-scrollbar-button:end,
-    ::-webkit-scrollbar-button:decrement,
-    ::-webkit-scrollbar-button:increment {
-        display: none !important;
-        width: 0px !important;
-        height: 0px !important;
-        size: 0px !important;
-        background: transparent !important;
-        border: none !important;
+    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
+        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
     }
     
-    /* Firefox uyumluluğu */
-    .table-container {
-        scrollbar-width: thin !important;
-        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
-        transition: scrollbar-color 0.8s ease-in-out !important;
-    }
-    .table-container:hover {
-        scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important;
-    }
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
     /* ========================================================= */
     
     .custom-table { 
@@ -331,8 +303,8 @@ st.markdown("""
         border: 1px solid #ddd; 
     }
     
-    /* MOBİL VE DAR EKRANLARDA SADECE İKON GÖSTERİMİ (YATAY MOD DÜZELTMESİ) */
-    @media (max-width: 900px) {
+    /* SADECE TELEFON YATAY (LANDSCAPE) MODA GEÇTİĞİNDE BUTON YAZILARINI İKONA ÇEVİRİR */
+    @media (max-width: 950px) and (orientation: landscape) {
         div[data-testid="stButton"] button p,
         div[data-testid="stDownloadButton"] button p {
             font-size: 0px !important;
@@ -356,10 +328,7 @@ st.markdown("""
 # ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     try:
         if "gcp_service_account" in st.secrets:
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
@@ -408,10 +377,8 @@ def track_user_presence():
             log_sheet = sh.worksheet("Ziyaretci_Log")
             now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
-            if cell:
-                log_sheet.update_cell(cell.row, 2, now_str)
-            else:
-                log_sheet.append_row([st.session_state.user_id, now_str])
+            if cell: log_sheet.update_cell(cell.row, 2, now_str)
+            else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
         
@@ -476,7 +443,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=180)  # 3 dakikalık önbellek
+@st.cache_data(ttl=180)  
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
