@@ -168,15 +168,16 @@ st.markdown("""
             gap: 8px;
             width: 100%;
         }
-        .main-system-logo {
-            height: 45px; 
-        }
-        .main-title-text {
-            font-size: 1.6rem; 
-        }
-        .online-badge-container {
-            margin-left: 0 !important; 
-            margin-top: 2px;
+        .main-system-logo { height: 45px; }
+        .main-title-text { font-size: 1.6rem; }
+        .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
+        
+        /* GÜNCELLEME KUTUCUĞUNU DİKEYDE ORTALA */
+        .update-badge {
+            float: none !important;
+            margin: 0 auto 15px auto !important;
+            width: fit-content !important;
+            display: block !important;
         }
     }
     
@@ -223,6 +224,7 @@ st.markdown("""
     .table-container::-webkit-scrollbar-thumb {
         background-color: rgba(128, 128, 128, 0) !important; 
         border-radius: 10px !important; 
+        transition: background-color 0.8s ease-in-out !important;
     }
     
     /* Tablo üzerinde gezinirken %3 opaklık (Neredeyse görünmez) */
@@ -235,13 +237,32 @@ st.markdown("""
         background-color: rgba(128, 128, 128, 0.10) !important; 
     }
     
-    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
-        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
+    /* MASAÜSTÜ (DESKTOP WEB) TARAYICILARDA OKLARI %100 FİZİKSEL OLARAK YOK EDER */
+    ::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button,
+    ::-webkit-scrollbar-button:vertical,
+    ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start,
+    ::-webkit-scrollbar-button:end,
+    ::-webkit-scrollbar-button:decrement,
+    ::-webkit-scrollbar-button:increment {
+        display: none !important;
+        width: 0px !important;
+        height: 0px !important;
+        size: 0px !important;
+        background: transparent !important;
+        border: none !important;
     }
     
-    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.8s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important; }
+    /* Firefox uyumluluğu */
+    .table-container {
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(128, 128, 128, 0) transparent !important;
+        transition: scrollbar-color 0.8s ease-in-out !important;
+    }
+    .table-container:hover {
+        scrollbar-color: rgba(128, 128, 128, 0.03) transparent !important;
+    }
     /* ========================================================= */
     
     .custom-table { 
@@ -377,8 +398,10 @@ def track_user_presence():
             log_sheet = sh.worksheet("Ziyaretci_Log")
             now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
-            if cell: log_sheet.update_cell(cell.row, 2, now_str)
-            else: log_sheet.append_row([st.session_state.user_id, now_str])
+            if cell:
+                log_sheet.update_cell(cell.row, 2, now_str)
+            else:
+                log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
         
@@ -443,7 +466,7 @@ def build_smart_link(label, raw_id, row):
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
-@st.cache_data(ttl=180)  
+@st.cache_data(ttl=180)  # 3 dakikalık önbellek
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
