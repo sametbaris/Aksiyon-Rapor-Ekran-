@@ -539,7 +539,7 @@ if df_data is not None:
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
     with col_grup: 
-        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü          Çoklu Seçim", key="grup_val")
+        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
     with col_plat: 
         filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
     with col_stat: 
