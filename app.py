@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 SHEET_ID = "17zVRiwyUYaaEAqyzNx0u7aMMncdgH81vrKbzqS9MHB4"
-MAPPING_FILE = "Aksiyon_Mapping.xlsx"
+MAPPING_FILE = "Aksiyon_Mapping_Resimli.xlsx"
 
 # --- PLATFORM ANA LİNKLERİ ---
 PLATFORM_LINKS = {
