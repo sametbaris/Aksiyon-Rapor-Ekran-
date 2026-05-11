@@ -482,7 +482,12 @@ def display_styled_table(df, mapping):
             # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
            # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
             if has_img:
-                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}"></div></div>'
+                import urllib.parse
+                # Akakçe'nin duvarını Google'ın devasa sunucularıyla ezip geçiyoruz!
+                safe_url = urllib.parse.quote(img_url, safe='')
+                google_proxy = f"https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url={safe_url}"
+                
+                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{google_proxy}"></div></div>'
             
             # Linkli mi, Linksiz mi?
             if url and d_val: 
