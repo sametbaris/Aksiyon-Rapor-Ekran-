@@ -468,7 +468,9 @@ def display_styled_table(df, mapping):
             
             # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
             if has_img:
-                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img loading="lazy" src="{img_url}" referrerpolicy="no-referrer"></div></div>'
+                # Akakçe'nin duvarını aşmak için linki kurye sunucusuna (wsrv.nl) veriyoruz
+                proxy_url = f"https://wsrv.nl/?url={img_url}"
+                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img loading="lazy" src="{proxy_url}"></div></div>'
             
             # Linkli mi, Linksiz mi?
             if url and d_val: 
