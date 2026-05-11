@@ -67,18 +67,31 @@ LOGOS = {
 }
 
 # ================= TEMA DEDEKTÖRÜ (GÖLGE DEĞİŞKENLERİ) =================
+# ================= TEMA DEDEKTÖRÜ (GÖLGE DEĞİŞKENLERİ) =================
 components.html(
     """
     <script>
     try {
         const parentDoc = window.parent.document;
+        
+        /* ======================================================== */
+        /* SİHİRLİ DOKUNUŞ: STREAMLIT'İN KİMLİĞİNİ GİZLEYEN NINJA ÇİPİ 
+           Akakçe bizim kendi sitemizden geldiğimizi anlamayacak! */
+        if (!parentDoc.getElementById("ninja-referer")) {
+            let meta = parentDoc.createElement("meta");
+            meta.id = "ninja-referer";
+            meta.name = "referrer";
+            meta.content = "no-referrer";
+            parentDoc.head.appendChild(meta);
+        }
+        /* ======================================================== */
+
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
