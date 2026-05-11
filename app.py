@@ -90,7 +90,6 @@ components.html(
                 }
                 
                 if (brightness < 128) {
-                    /* Karanlık Modda invert olan logolara hover yapıldığında özel silüet gölgesi/parlaması (beyaz gölge) */
                     styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; } .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }`;
                     parentDoc.documentElement.classList.add('dark-theme');
                     parentDoc.documentElement.classList.remove('light-theme');
@@ -109,34 +108,16 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    /* ========================================================= */
-    /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME          */
-    /* ========================================================= */
-    html, body, [class*="css"] {
-        font-size: 14px !important; /* Varsayılan metinleri küçültür */
-    }
+    /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME */
+    html, body, [class*="css"] { font-size: 14px !important; }
     
-    .block-container {
-        max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
-        padding-top: 1.5rem !important; 
-        padding-bottom: 1rem !important;
-    }
-    
-    header[data-testid="stHeader"] {
-        height: 2.5rem !important;
-        background: transparent !important; 
-    }
-    /* ========================================================= */
+    .block-container { max-width: 100% !important; padding-top: 1.5rem !important; padding-bottom: 1rem !important; }
+    header[data-testid="stHeader"] { height: 2.5rem !important; background: transparent !important; }
 
-    * {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-    }
+    * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
 
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
     
@@ -144,33 +125,18 @@ st.markdown("""
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
-    .main-logo-container { 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 20px; 
-        flex-wrap: wrap;
-    }
-    
+    .main-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     .main-system-logo { height: 50px; width: auto; object-fit: contain; transition: height 0.3s; }
     .main-title-text { margin: 0; display: inline-block; font-size: 1.8rem; font-weight: 700; transition: font-size 0.3s; }
     
-    .online-badge-container {
-        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
-    }
+    .online-badge-container { display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); }
     
     @media (max-width: 768px) {
         .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
         .main-system-logo { height: 40px; }
         .main-title-text { font-size: 1.4rem; }
         .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
-        
-        .update-badge {
-            float: none !important; margin: 0 auto 15px auto !important;
-            width: fit-content !important; display: block !important;
-        }
+        .update-badge { float: none !important; margin: 0 auto 15px auto !important; width: fit-content !important; display: block !important; }
     }
     
     div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
@@ -181,112 +147,71 @@ st.markdown("""
         font-weight: 500 !important; letter-spacing: normal !important;
     }
     
-    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
-    .table-container { 
-        width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; 
-        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
-    }
+    /* TABLO TASARIMI */
+    .table-container { width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important; }
     
-    /* SCROLLBAR */
     .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
     .table-container::-webkit-scrollbar-track { background: transparent !important; }
-    
-    .table-container::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
-        transition: background-color 0.3s ease-in-out !important;
-    }
-    
+    .table-container::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; transition: background-color 0.3s ease-in-out !important; }
     .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
     .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
-        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
-    }
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment { display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important; }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
     .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     
-    /* ========================================================= */
-    /* BAŞLIK LOGOLARI: LIFT & DROP-SHADOW (SİLÜET GÖLGESİ)      */
-    /* ========================================================= */
-    .header-logo { 
-        height: 26px; 
-        width: auto; 
-        max-width: 120px; 
-        object-fit: contain; 
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; 
-        will-change: transform, filter;
-    }
-    .header-logo:hover { 
-        transform: scale3d(1.15, 1.15, 1) translateZ(0); 
-        /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
-        filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.25)); 
-    }
+    /* BAŞLIK LOGOLARI SİLÜET GÖLGESİ */
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; will-change: transform, filter; }
+    .header-logo:hover { transform: scale3d(1.15, 1.15, 1) translateZ(0); filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.25)); }
+    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }
     
-    /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
-    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { 
-        filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; 
-    }
-    /* ========================================================= */
-    
-    .custom-table thead th { 
-        position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center;
-        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
-        background-color: var(--dynamic-bg-color, #ffffff) !important;
-        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
-    }
-    
+    .custom-table thead th { position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center; color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px; background-color: var(--dynamic-bg-color, #ffffff) !important; box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important; }
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
-    /* ========================================================= */
-    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
-    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
-    .data-pill { 
-        padding: 5px 12px; 
-        display: inline-flex; 
-        align-items: center;
-        justify-content: center;
-        border-radius: 20px; 
-        font-size: 13px;
-        line-height: 1.2;
-        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
-        transform: translateY(0);
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        backface-visibility: hidden;
-        -webkit-font-smoothing: antialiased;
-        will-change: transform;
-    }
+    /* LIFT & FLOAT BUTONLARI */
+    .data-pill { padding: 5px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 13px; line-height: 1.2; transform: translateY(0); transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); backface-visibility: hidden; -webkit-font-smoothing: antialiased; will-change: transform; }
+    a.data-link:hover .data-pill { transform: translateY(-2px); box-shadow: 0px 5px 12px rgba(0,0,0,0.15); cursor: pointer; }
     
-    a.data-link:hover .data-pill { 
-        /* Elementi esnetmek/büyütmek yerine 3 piksel yukarı kaydır */
-        transform: translateY(-3px); 
-        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
-        cursor: pointer; 
-    }
     /* ========================================================= */
-    
-    .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
-    
-    /* BUTON STİLLERİ */
-    div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { 
-        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px;
+    /* HOVER THUMBNAIL (GÖRSEL POP-UP) EFEKTİ SİHRİ              */
+    /* ========================================================= */
+    .sku-wrapper { position: relative; display: inline-block; }
+    .sku-thumb { 
+        visibility: hidden; position: absolute; left: 100%; top: 50%; 
+        transform: translateY(-50%) translateX(10px); opacity: 0; 
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background-color: var(--dynamic-bg-color, #ffffff);
+        padding: 6px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        z-index: 999; border: 1px solid rgba(128,128,128,0.15);
+        pointer-events: none; margin-left: 5px;
     }
+    .sku-thumb img { width: 140px; height: 140px; object-fit: contain; border-radius: 8px; display: block; background: #ffffff; }
     
+    /* Çentik (Sol Ok) */
+    .sku-thumb::after {
+        content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px;
+        border-width: 8px; border-style: solid;
+        border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent;
+    }
+    /* Tablodaki z-index karmaşasını çözmek için satırı üste alır */
+    .custom-table tr:hover { z-index: 100; position: relative; }
+    .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(15px); }
+    /* ========================================================= */
+
+    .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
+    div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; }
     @media (max-width: 950px) and (orientation: landscape) {
-        div[data-testid="stButton"] button p,
-        div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
+        div[data-testid="stButton"] button p, div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
         div[data-testid="stButton"] button p::before { content: "🧹"; font-size: 16px !important; visibility: visible; }
         div[data-testid="stDownloadButton"] button p::before { content: "📥"; font-size: 16px !important; visibility: visible; }
     }
-    
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -315,16 +240,13 @@ def get_online_count():
         sh = client.open_by_key(SHEET_ID)
         log_sheet = sh.worksheet("Ziyaretci_Log")
         all_logs = log_sheet.get_all_records()
-        
         online_count = 0
         tr_now = datetime.utcnow() + timedelta(hours=3)
         two_minutes_ago = tr_now - timedelta(minutes=2)
-        
         for record in all_logs:
             try:
                 last_seen = datetime.strptime(str(record.get('Son_Gorulme', '')), "%Y-%m-%d %H:%M:%S")
-                if last_seen > two_minutes_ago:
-                    online_count += 1
+                if last_seen > two_minutes_ago: online_count += 1
             except: pass
         return max(1, online_count)
     except: return 1
@@ -333,10 +255,8 @@ def track_user_presence():
     if 'user_id' not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())[:8]
         st.session_state.last_ping = None
-        
     now = datetime.utcnow() + timedelta(hours=3)
     client = get_gspread_client()
-    
     if client and (st.session_state.last_ping is None or (now - st.session_state.last_ping).total_seconds() > 60):
         try:
             sh = client.open_by_key(SHEET_ID)
@@ -347,7 +267,6 @@ def track_user_presence():
             else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
-        
     return get_online_count()
 
 # ================= YARDIMCI FONKSİYONLAR =================
@@ -432,12 +351,9 @@ def load_and_merge_data():
         df_fiyat = pd.DataFrame(data[1:], columns=data[0])
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
-        if bc_col: 
-            df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
-        else:
-            df_fiyat["Barkod_Int"] = ""
+        if bc_col: df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        else: df_fiyat["Barkod_Int"] = ""
         
         gsheet_bs_links = {}
         try:
@@ -462,12 +378,10 @@ def load_and_merge_data():
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
             
-            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
             if map_bc_col and map_bc_col in df_map.columns:
                 df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
-            else:
-                df_map["Barkod_Int"] = ""
+            else: df_map["Barkod_Int"] = ""
                 
             wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws_map = wb_map.active
@@ -481,7 +395,9 @@ def load_and_merge_data():
                     b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
-            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link"]
+            
+            # GORSEL_URL SÜTUNUNU BURAYA EKLEDİK (Botun çektiği linkleri alıyoruz)
+            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
             return df_final.fillna(""), update_text
@@ -542,8 +458,24 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link"><span class="data-pill" style="{style}">{d_val}</span></a></td>'
-            else: html += f'<td><span class="data-pill" style="{style}">{d_val}</span></td>'
+            # --- THUMBNAIL GÖRSEL SİHRİ ---
+            img_url = str(row.get("Gorsel_URL", "")).strip()
+            is_sku_col = (label == "Ürün Kodu")
+            has_img = is_sku_col and img_url.startswith("http")
+            
+            # İçerik bloğunu hazırlıyoruz
+            inner_content = f'<span class="data-pill" style="{style}">{d_val}</span>'
+            
+            # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
+            if has_img:
+                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img loading="lazy" src="{img_url}"></div></div>'
+            
+            # Linkli mi, Linksiz mi?
+            if url and d_val: 
+                html += f'<td><a href="{url}" target="_blank" class="data-link">{inner_content}</a></td>'
+            else: 
+                html += f'<td>{inner_content}</td>'
+                
         html += '</tr>'
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
@@ -673,7 +605,7 @@ if df_data is not None:
         st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
-            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
+            st.button("🧹 Filtreleri Temizle", on_click=reset_filters, use_container_width=True)
         with btn_excel:
             st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
