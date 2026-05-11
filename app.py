@@ -480,10 +480,9 @@ def display_styled_table(df, mapping):
             inner_content = f'<span class="data-pill" style="{style}">{d_val}</span>'
             
             # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
+           # Eğer ürün koduysa ve resim varsa, Hover Sihrini içine hapsediyoruz
             if has_img:
-                # Akakçe'nin duvarını aşmak için linki kurye sunucusuna (wsrv.nl) veriyoruz
-                proxy_url = f"https://wsrv.nl/?url={img_url}"
-                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img loading="lazy" src="{proxy_url}"></div></div>'
+                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}"></div></div>'
             
             # Linkli mi, Linksiz mi?
             if url and d_val: 
