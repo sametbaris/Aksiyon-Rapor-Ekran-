@@ -435,41 +435,28 @@ def get_column_mapping(df):
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
-    
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
-        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
-            return str(hidden_link)
-        if val: 
-            return f"https://www.akakce.com/arama/?q={val}"
-        if barcode: 
-            return f"https://www.akakce.com/arama/?q={barcode}"
+        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
+        if val: return f"https://www.akakce.com/arama/?q={val}"
+        if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
         return None
-        
-    if val.startswith("http"): 
-        return val
-        
+    if val.startswith("http"): return val
     if label == "Braun Shop":
         gs_link = row.get("GS_BS_Link")
-        if pd.notna(gs_link) and str(gs_link).startswith("http"): 
-            return str(gs_link)
-        if val: 
-            return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
-        if barcode: 
-            return f"https://www.braunshop.com.tr/arama?q={barcode}"
+        if pd.notna(gs_link) and str(gs_link).startswith("http"): return str(gs_link)
+        if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
+        if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
-        
     if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
-        
     if barcode:
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
-        
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
