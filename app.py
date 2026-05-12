@@ -232,7 +232,13 @@ st.markdown("""
     }
     /* ========================================================= */
     
-    .custom-table thead th { position: sticky; top: 0px !important; z-index: 2000 !important; padding: 12px 18px; text-align: center; color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px; background-color: var(--dynamic-bg-color, #ffffff) !important; box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important; }
+    .custom-table thead th { 
+        position: sticky; top: 0px !important; z-index: 50 !important; padding: 12px 18px; text-align: center;
+        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
+        background-color: var(--dynamic-bg-color, #ffffff) !important;
+        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
+        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+    }
     
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
@@ -299,9 +305,8 @@ st.markdown("""
         display: block !important; 
     }
     
-   .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
+    .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
     .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
-    
     /* ========================================================= */
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
@@ -514,8 +519,7 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # SİHİRLİ DOKUNUŞ: Gorsel_URL sütunu tabloya eklendi
-            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL"]
+            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
             return df_final.fillna(""), update_text
@@ -534,6 +538,7 @@ def display_styled_table(df, mapping):
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     
     for label, real in mapping.items():
+        if label == "Marka": continue
         if real:
             count_html = ""
             if label in pazaryerleri:
@@ -558,7 +563,7 @@ def display_styled_table(df, mapping):
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
-            if not real: continue
+            if not real or label == "Marka": continue
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
             
@@ -594,12 +599,14 @@ def display_styled_table(df, mapping):
 
 # ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
+if "marka_val" not in st.session_state: st.session_state.marka_val = []
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
 if "plat_val" not in st.session_state: st.session_state.plat_val = None
 if "stat_val" not in st.session_state: st.session_state.stat_val = None
 
 def reset_filters():
     st.session_state.search_val = ""
+    st.session_state.marka_val = []
     st.session_state.grup_val = []
     st.session_state.plat_val = None
     st.session_state.stat_val = None
@@ -629,6 +636,7 @@ with col_update:
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
+    marka_col = mapping.get("Marka")
     
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
@@ -637,13 +645,24 @@ if df_data is not None:
             if v != "" and v not in gruplar: gruplar.append(v)
     else: 
         gruplar = []
+        
+    if marka_col and marka_col in df_data.columns:
+        markalar = []
+        for x in df_data[marka_col].dropna():
+            v = str(x).strip()
+            if v != "" and v not in markalar: markalar.append(v)
+        markalar = sorted(markalar)
+    else:
+        markalar = []
 
-    col_search, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.6, 2.2, 2.2, 1.4, 2.0])
+    col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.0, 1.8, 1.8, 1.8, 1.4, 1.6])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
+    with col_marka:
+        filter_marka = st.multiselect("🏷️ Marka", markalar, placeholder="Tümü", key="marka_val")
     with col_grup: 
-        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
+        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü", key="grup_val")
     with col_plat: 
         filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
     with col_stat: 
@@ -651,6 +670,9 @@ if df_data is not None:
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
+    if filter_marka and marka_col:
+        df_data = df_data[df_data[marka_col].astype(str).str.strip().isin(filter_marka)]
+        
     if filter_grup and alt_grup_col: 
         if "Tümü" not in filter_grup: 
             df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
@@ -677,7 +699,7 @@ if df_data is not None:
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
-    export_cols = [real for label, real in mapping.items() if real in df_data.columns]
+    export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"]
     df_export = df_data[export_cols].copy()
     
     price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
