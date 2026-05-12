@@ -499,14 +499,12 @@ def load_and_merge_data():
             headers_gs = [str(c.value).strip() if c.value else "" for c in ws_gs[1]]
             idx_bc_gs = next((i for i, h in enumerate(headers_gs) if "barkod" in h.lower()), None)
             idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
-            
             if idx_bc_gs is not None and idx_bs_gs is not None:
                 for r_idx in range(2, ws_gs.max_row + 1):
                     bc_val = clean_val(ws_gs.cell(row=r_idx, column=idx_bc_gs+1).value)
                     bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1)
                     url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
-                    if bc_val and url: 
-                        gsheet_bs_links[bc_val] = url
+                    if bc_val and url: gsheet_bs_links[bc_val] = url
         except Exception as e: pass
             
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
@@ -528,17 +526,13 @@ def load_and_merge_data():
             idx_bc_map = next((i for i, h in enumerate(headers_map) if "barkod" in h.lower()), None)
             idx_br_map = next((i for i, h in enumerate(headers_map) if "braun" in h.lower() and "kodu" in h.lower()), None)
             ext_links = {}
-            
             if idx_bc_map is not None and idx_br_map is not None:
                 for r_idx in range(2, ws_map.max_row + 1):
                     bc_val = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
                     b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
-                    if bc_val and b_cell.hyperlink: 
-                        ext_links[bc_val] = b_cell.hyperlink.target
-                        
+                    if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
-            
-            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
+            link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
             return df_final.fillna(""), update_text
