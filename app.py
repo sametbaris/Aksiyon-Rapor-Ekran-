@@ -81,13 +81,14 @@ components.html(
             meta.content = "no-referrer";
             parentDoc.head.appendChild(meta);
         }
-        
+
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
+                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -99,6 +100,7 @@ components.html(
                 }
                 
                 if (brightness < 128) {
+                    /* Karanlık Modda invert olan logolara hover yapıldığında özel silüet gölgesi/parlaması (beyaz gölge) */
                     styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; } .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }`;
                     parentDoc.documentElement.classList.add('dark-theme');
                     parentDoc.documentElement.classList.remove('light-theme');
@@ -117,57 +119,226 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    html, body, [class*="css"] { font-size: 14px !important; }
-    .block-container { max-width: 100% !important; padding-top: 1.5rem !important; padding-bottom: 1rem !important; }
-    header[data-testid="stHeader"] { height: 2.5rem !important; background: transparent !important; }
-    * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
+    /* ========================================================= */
+    /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME          */
+    /* ========================================================= */
+    html, body, [class*="css"] {
+        font-size: 14px !important; /* Varsayılan metinleri küçültür */
+    }
+    
+    .block-container {
+        max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
+        padding-top: 1.5rem !important; 
+        padding-bottom: 1rem !important;
+    }
+    
+    header[data-testid="stHeader"] {
+        height: 2.5rem !important;
+        background: transparent !important; 
+    }
+    /* ========================================================= */
+
+    * {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+    }
+
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
+    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
+    
     .dark-theme .logo-light, html[data-theme="dark"] .logo-light { display: none !important; }
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    .main-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
+    .main-logo-container { 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        margin-bottom: 20px; 
+        flex-wrap: wrap;
+    }
+    
     .main-system-logo { height: 50px; width: auto; object-fit: contain; transition: height 0.3s; }
     .main-title-text { margin: 0; display: inline-block; font-size: 1.8rem; font-weight: 700; transition: font-size 0.3s; }
-    .online-badge-container { display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); }
+    
+    .online-badge-container {
+        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
+        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
+    }
     
     @media (max-width: 768px) {
         .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
         .main-system-logo { height: 40px; }
         .main-title-text { font-size: 1.4rem; }
         .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
+        
+        .update-badge {
+            float: none !important; margin: 0 auto 15px auto !important;
+            width: fit-content !important; display: block !important;
+        }
     }
     
-    .table-container { width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; }
+    div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
+    div[data-baseweb="popover"] ul { transform: translateZ(0) !important; backface-visibility: hidden !important; }
+    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span {
+        -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 13px !important;
+        font-weight: 500 !important; letter-spacing: normal !important;
+    }
     
-    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; will-change: transform, filter; }
-    .header-logo:hover { transform: scale3d(1.15, 1.15, 1) translateZ(0); filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.25)); }
+    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
+    .table-container { 
+        width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; 
+        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
+    }
     
-    .custom-table thead th { position: sticky; top: 0px !important; z-index: 2000 !important; padding: 12px 18px; text-align: center; color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px; background-color: var(--dynamic-bg-color, #ffffff) !important; box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important; }
+    /* SCROLLBAR */
+    .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+    .table-container::-webkit-scrollbar-track { background: transparent !important; }
+    
+    .table-container::-webkit-scrollbar-thumb {
+        background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
+        transition: background-color 0.3s ease-in-out !important;
+    }
+    
+    .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
+    .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
+    
+    ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
+        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
+    }
+    
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
+    
+    .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
+    
+    /* ========================================================= */
+    /* BAŞLIK LOGOLARI: LIFT & DROP-SHADOW (SİLÜET GÖLGESİ)      */
+    /* ========================================================= */
+    .header-logo { 
+        height: 26px; 
+        width: auto; 
+        max-width: 120px; 
+        object-fit: contain; 
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; 
+        will-change: transform, filter;
+    }
+    .header-logo:hover { 
+        transform: scale3d(1.15, 1.15, 1) translateZ(0); 
+        /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
+        filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.25)); 
+    }
+    
+    /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
+    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { 
+        filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; 
+    }
+    /* ========================================================= */
+    
+    .custom-table thead th { 
+        position: sticky; top: 0px !important; z-index: 50 !important; padding: 12px 18px; text-align: center;
+        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
+        background-color: var(--dynamic-bg-color, #ffffff) !important;
+        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
+        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
+    }
+    
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
+    .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
+    /* ========================================================= */
+    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
+    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
-    .data-pill { padding: 5px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 13px; line-height: 1.2; transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); backface-visibility: hidden; -webkit-font-smoothing: antialiased; will-change: transform; }
-    a.data-link:hover .data-pill { transform: translateY(-3px); box-shadow: 0px 5px 12px rgba(0,0,0,0.15); cursor: pointer; }
+    
+    .data-pill { 
+        padding: 5px 12px; 
+        display: inline-flex; 
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px; 
+        font-size: 13px;
+        line-height: 1.2;
+        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
+        transform: translateY(0);
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        backface-visibility: hidden;
+        -webkit-font-smoothing: antialiased;
+        will-change: transform;
+    }
+    
+    a.data-link:hover .data-pill { 
+        /* Elementi esnetmek/büyütmek yerine 3 piksel yukarı kaydır */
+        transform: translateY(-3px); 
+        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
+        cursor: pointer; 
+    }
+    /* ========================================================= */
 
-    /* HOVER THUMBNAIL (GÖRSEL SİHRİ) */
+    /* ========================================================= */
+    /* HOVER THUMBNAIL (GÖRSEL SİHRİ) - STREAMLIT ÇÖKMESİNE KARŞI*/
+    /* ========================================================= */
     .sku-wrapper { position: relative; display: inline-block; cursor: pointer; }
-    .sku-thumb { visibility: hidden; position: absolute; left: 110%; top: 50%; transform: translateY(-50%) translateX(10px); opacity: 0; transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff); padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; width: 162px !important; height: 162px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-    .sku-thumb img { width: 150px !important; height: 150px !important; min-width: 150px !important; min-height: 150px !important; max-width: 150px !important; object-fit: contain !important; border-radius: 8px; background: white; display: block !important; }
+    
+    .sku-thumb { 
+        visibility: hidden; position: absolute; left: 110%; top: 50%; 
+        transform: translateY(-50%) translateX(10px); opacity: 0; 
+        transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff);
+        padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; 
+        
+        /* 1. SİHİRLİ DOKUNUŞ: STREAMLIT'İN 0 GENİŞLİK YAPMASINI ENGELLİYORUZ */
+        width: 162px !important; 
+        height: 162px !important;
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important;
+    }
+    
+    .sku-thumb img { 
+        /* 2. SİHİRLİ DOKUNUŞ: RESMİ KESİN OLARAK KİTLİYORUZ */
+        width: 150px !important; 
+        height: 150px !important; 
+        min-width: 150px !important; 
+        min-height: 150px !important; 
+        max-width: 150px !important;
+        object-fit: contain !important; 
+        border-radius: 8px; 
+        background: white; 
+        display: block !important; 
+    }
+    
     .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
     .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
-
+    /* ========================================================= */
+    
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
     /* BUTON STİLLERİ VE ORTALAMA */
     div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; }
+    div[data-testid="stButton"] button { 
+        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; 
+    }
     div[data-testid="stDownloadButton"] button p, 
-    div[data-testid="stButton"] button p { display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; }
+    div[data-testid="stButton"] button p { 
+        display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; 
+    }
+    
+    @media (max-width: 950px) and (orientation: landscape) {
+        div[data-testid="stButton"] button p,
+        div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
+        div[data-testid="stButton"] button p::before { content: "🧹"; font-size: 16px !important; visibility: visible; }
+        div[data-testid="stDownloadButton"] button p::before { content: "📥"; font-size: 16px !important; visibility: visible; }
+    }
+    
+    .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -180,9 +351,11 @@ def get_gspread_client():
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         elif os.path.exists("service_account.json"):
             creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
-        else: return None
+        else:
+            return None
         return gspread.authorize(creds)
-    except Exception: return None
+    except Exception:
+        return None
 
 # ================= ZİYARETÇİ TAKİP MOTORU =================
 @st.cache_data(ttl=60)
@@ -190,39 +363,56 @@ def get_online_count():
     client = get_gspread_client()
     if not client: return 1
     try:
-        sh = client.open_by_key(SHEET_ID); log_sheet = sh.worksheet("Ziyaretci_Log")
+        sh = client.open_by_key(SHEET_ID)
+        log_sheet = sh.worksheet("Ziyaretci_Log")
         all_logs = log_sheet.get_all_records()
-        online_count = 0; tr_now = datetime.utcnow() + timedelta(hours=3); two_minutes_ago = tr_now - timedelta(minutes=2)
+        
+        online_count = 0
+        tr_now = datetime.utcnow() + timedelta(hours=3)
+        two_minutes_ago = tr_now - timedelta(minutes=2)
+        
         for record in all_logs:
             try:
                 last_seen = datetime.strptime(str(record.get('Son_Gorulme', '')), "%Y-%m-%d %H:%M:%S")
-                if last_seen > two_minutes_ago: online_count += 1
+                if last_seen > two_minutes_ago:
+                    online_count += 1
             except: pass
         return max(1, online_count)
     except: return 1
 
 def track_user_presence():
-    if 'user_id' not in st.session_state: st.session_state.user_id = str(uuid.uuid4())[:8]
-    now = datetime.utcnow() + timedelta(hours=3); client = get_gspread_client()
-    if client:
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = str(uuid.uuid4())[:8]
+        st.session_state.last_ping = None
+        
+    now = datetime.utcnow() + timedelta(hours=3)
+    client = get_gspread_client()
+    
+    if client and (st.session_state.last_ping is None or (now - st.session_state.last_ping).total_seconds() > 60):
         try:
-            sh = client.open_by_key(SHEET_ID); log_sheet = sh.worksheet("Ziyaretci_Log"); now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+            sh = client.open_by_key(SHEET_ID)
+            log_sheet = sh.worksheet("Ziyaretci_Log")
+            now_str = now.strftime("%Y-%m-%d %H:%M:%S")
             cell = log_sheet.find(st.session_state.user_id)
             if cell: log_sheet.update_cell(cell.row, 2, now_str)
             else: log_sheet.append_row([st.session_state.user_id, now_str])
+            st.session_state.last_ping = now
         except: pass
+        
     return get_online_count()
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
-    return v if v.startswith("http") else v.split('.')[0]
+    if v.startswith("http"): return v
+    return v.split('.')[0]
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
-    v = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
-    try: return float(re.sub(r"[^\d.]", "", v))
+    val_str = str(val).lower().replace("tl", "").replace("₺", "").replace(".", "").replace(",", ".").strip()
+    clean = re.sub(r"[^\d.]", "", val_str)
+    try: return float(clean)
     except: return None
 
 def get_column_mapping(df):
@@ -233,14 +423,18 @@ def get_column_mapping(df):
                 return c
         return None
     return {
-        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"), "Barkod": find_col("Barkod"),
-        "Ürün Kodu": find_col("Kodu", exclude="Barkod"), "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
-        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"), "Teknosa": find_col("Teknosa"),
-        "Vatan": find_col("Vatan"), "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"), "Amazon": find_col("Amazon")
+        "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
+        "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
+        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
+        "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
+        "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
+        "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
+        "Amazon": find_col("Amazon")
     }
 
 def build_smart_link(label, raw_id, row):
-    val = clean_val(raw_id); barcode = clean_val(row.get("Barkod_Int", ""))
+    val = clean_val(raw_id)
+    barcode = clean_val(row.get("Barkod_Int", ""))
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
@@ -254,7 +448,7 @@ def build_smart_link(label, raw_id, row):
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
-    if val:
+    if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
@@ -269,97 +463,155 @@ def build_smart_link(label, raw_id, row):
 @st.cache_data(ttl=180)  
 def load_and_merge_data():
     client = get_gspread_client()
-    if not client: return None, ""
+    if not client:
+        st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
+        return None, ""
+
     try:
-        sh = client.open_by_key(SHEET_ID); worksheet = sh.worksheet("Guncel")
-        update_text = ""; try: update_text = str(worksheet.acell("N1").value).replace('"', '').strip(); except: pass
+        sh = client.open_by_key(SHEET_ID)
+        worksheet = sh.worksheet("Guncel")
+        
+        update_text = ""
+        try:
+            update_text = worksheet.acell("N1").value
+            update_text = str(update_text).replace('"', '').strip()
+        except: pass
+
         data = worksheet.get_all_values()
         if not data: return None, update_text
-        df_fiyat = pd.DataFrame(data[1:], columns=[c.strip() for c in data[0]])
-        bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), "Barkod")
-        df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+            
+        df_fiyat = pd.DataFrame(data[1:], columns=data[0])
+        df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # --- BRAUN SHOP HİPERLİNKLERİNİ ÇEK ---
+        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
+        bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
+        if bc_col: 
+            df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        else:
+            df_fiyat["Barkod_Int"] = ""
+        
         gsheet_bs_links = {}
         try:
             export_data = client.export(SHEET_ID, format='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            wb_gs = openpyxl.load_workbook(io.BytesIO(export_data), data_only=False); ws_gs = wb_gs["Guncel"]
+            wb_gs = openpyxl.load_workbook(io.BytesIO(export_data), data_only=False)
+            ws_gs = wb_gs["Guncel"]
+            
             headers_gs = [str(c.value).strip() if c.value else "" for c in ws_gs[1]]
             idx_bc_gs = next((i for i, h in enumerate(headers_gs) if "barkod" in h.lower()), None)
             idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
             if idx_bc_gs is not None and idx_bs_gs is not None:
                 for r_idx in range(2, ws_gs.max_row + 1):
                     bc_val = clean_val(ws_gs.cell(row=r_idx, column=idx_bc_gs+1).value)
-                    bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1); url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
+                    bs_cell = ws_gs.cell(row=r_idx, column=idx_bs_gs+1)
+                    url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
                     if bc_val and url: gsheet_bs_links[bc_val] = url
-        except: pass
+        except Exception as e: pass
+            
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         
         if os.path.exists(MAPPING_FILE):
-            df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str); df_map.columns = [c.strip() for c in df_map.columns]
-            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Barkod")
-            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
+            df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
+            df_map.columns = [c.strip() for c in df_map.columns]
             
-            # --- AKAKÇE HİPERLİNKLERİNİ ÇEK ---
-            wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True); ws_map = wb_map.active
+            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
+            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
+            if map_bc_col and map_bc_col in df_map.columns:
+                df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
+            else:
+                df_map["Barkod_Int"] = ""
+                
+            wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
+            ws_map = wb_map.active
             headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
             idx_bc_map = next((i for i, h in enumerate(headers_map) if "barkod" in h.lower()), None)
             idx_br_map = next((i for i, h in enumerate(headers_map) if "braun" in h.lower() and "kodu" in h.lower()), None)
             ext_links = {}
             if idx_bc_map is not None and idx_br_map is not None:
                 for r_idx in range(2, ws_map.max_row + 1):
-                    bc_v = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value); b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
-                    if bc_v and b_cell.hyperlink: ext_links[bc_v] = b_cell.hyperlink.target
+                    bc_val = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
+                    b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
+                    if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
-            df_final = pd.merge(df_fiyat, df_map[[c for c in link_cols if c in df_map.columns]], on="Barkod_Int", how="left")
+            df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
+            df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
             return df_final.fillna(""), update_text
+            
         return df_fiyat.fillna(""), update_text
-    except Exception as e: return None, ""
+        
+    except Exception as e:
+        st.error(f"Google bağlantı hatası: {e}")
+        return None, ""
 
 # ================= RENDER TABLO =================
 def display_styled_table(df, mapping):
     refs = { "Aksiyon": "CSS Code", "Braun Shop": "BS Data ID", "Media Markt": "MM", "Teknosa": "TKNS", "Vatan": "VTN", "Trendyol": "TY", "Hepsiburada": "HB", "Amazon": "AMZ" }
+    pazaryerleri = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
+    
     for label, real in mapping.items():
         if label == "Marka": continue
         if real:
-            logo = LOGOS.get(label); plat_url = PLATFORM_LINKS.get(label); count_html = ""
-            if label in ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]:
+            count_html = ""
+            if label in pazaryerleri:
                 valid_count = sum(1 for v in df[real] if parse_price(v) is not None)
-                count_html = f'<div style="font-size: 10px; color: var(--header-color); margin-top: 5px; font-weight: 700;">{valid_count} Ürün</div>'
-            if logo and logo["light"]:
-                inv = "invert-logo" if logo["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
-                content = f'<img src="{logo["light"]}" class="header-logo logo-light"><img src="{logo["dark"]}" class="header-logo logo-dark {inv}">'
-                if plat_url: content = f'<a href="{plat_url}" target="_blank" style="text-decoration:none;">{content}</a>'
+                count_html = f'<div style="font-size: 10px; color: var(--header-color); margin-top: 5px; font-weight: 700; letter-spacing: 0.5px; text-transform: none;">{valid_count} Ürün</div>'
+
+            logo_pair = LOGOS.get(label)
+            plat_url = PLATFORM_LINKS.get(label)
+            
+            if logo_pair and logo_pair["light"]:
+                l_src = logo_pair["light"]; d_src = logo_pair["dark"]
+                inv_class = "invert-logo" if logo_pair["invert_dark"] and label in ["Amazon", "Aksiyon"] else ""
+                if plat_url: content = f'<a href="{plat_url}" target="_blank" style="text-decoration:none;"><img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}"></a>'
+                else: content = f'<img src="{l_src}" class="header-logo logo-light" title="{label}"><img src="{d_src}" class="header-logo logo-dark {inv_class}" title="{label}">'
+                
                 html += f'<th>{content}{count_html}</th>'
-            else: html += f'<th>{label}{count_html}</th>'
+            else: 
+                html += f'<th>{label}{count_html}</th>'
+
     html += '</tr></thead><tbody>'
+    
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
             if not real or label == "Marka": continue
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
-            bs_col = mapping.get("Braun Shop")
-            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col:
-                p_ref = parse_price(row[bs_col]); p_curr = parse_price(d_val)
+            bs_col_name = mapping.get("Braun Shop")
+            
+            if label in ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"] and bs_col_name:
+                p_ref = parse_price(row[bs_col_name]); p_curr = parse_price(d_val)
                 if p_ref and p_curr:
                     if p_curr == p_ref: style = 'background-color: #d4edda; color: #155724; font-weight: 600;' 
                     elif p_curr > p_ref: style = 'background-color: #fff3cd; color: #856404; font-weight: 600;' 
                     else: style = 'background-color: #f8d7da; color: #721c24; font-weight: 600;' 
-            if not style and d_val: style = 'background-color: transparent;' if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]) else 'background-color: var(--pill-default-bg);'
+                    
+            if not style and d_val:
+                if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
+                else: style = 'background-color: var(--pill-default-bg);'
+                
+            map_key = refs.get(label); target_id = row.get(map_key, "")
+            url = build_smart_link(label, target_id, row)
             
-            target_id = row.get(refs.get(label, ""), ""); url = build_smart_link(label, target_id, row)
-            img_url = str(row.get("Gorsel_URL", "")).strip(); is_sku = (label == "Ürün Kodu") and img_url.startswith("http")
-            inner = f'<span class="data-pill" style="{style}">{d_val}</span>'
-            if is_sku: inner = f'<div class="sku-wrapper">{inner}<div class="sku-thumb"><img src="{img_url}" referrerpolicy="no-referrer"></div></div>'
-            if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link">{inner}</a></td>'
-            else: html += f'<td>{inner}</td>'
+            # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini, CSS yapını bozmadan ekliyoruz
+            img_url = str(row.get("Gorsel_URL", "")).strip()
+            is_sku_col = (label == "Ürün Kodu")
+            has_img = is_sku_col and img_url.startswith("http")
+            
+            inner_content = f'<span class="data-pill" style="{style}">{d_val}</span>'
+            
+            if has_img:
+                # Hover sihrini "no-referrer" engeli aşacak kuralı ile içine hapsediyoruz
+                inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}" referrerpolicy="no-referrer"></div></div>'
+            
+            if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link">{inner_content}</a></td>'
+            else: html += f'<td>{inner_content}</td>'
         html += '</tr>'
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
-# ================= SESSION STATE =================
+# ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
 if "marka_val" not in st.session_state: st.session_state.marka_val = []
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
@@ -367,82 +619,151 @@ if "plat_val" not in st.session_state: st.session_state.plat_val = None
 if "stat_val" not in st.session_state: st.session_state.stat_val = None
 
 def reset_filters():
-    st.session_state.search_val = ""; st.session_state.marka_val = []; st.session_state.grup_val = []; st.session_state.plat_val = None; st.session_state.stat_val = None
+    st.session_state.search_val = ""
+    st.session_state.marka_val = []
+    st.session_state.grup_val = []
+    st.session_state.plat_val = None
+    st.session_state.stat_val = None
 
 # ================= MAIN =================
 col_title, col_update = st.columns([3, 1])
-with col_title:
-    online = track_user_presence(); badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 11px; font-weight: 600;">{online} Online</span></div>'
-    if SYSTEM_LOGO["light"]: st.markdown(f'<div class="main-logo-container"><img src="{SYSTEM_LOGO["light"]}" class="main-system-logo"><h1 class="main-title-text">Aksiyon Raporu</h1>{badge}</div>', unsafe_allow_html=True)
-    else: st.markdown(f'<div class="main-logo-container"><h1 class="main-title-text">📊 Aksiyon Raporu</h1>{badge}</div>', unsafe_allow_html=True)
 
-res = load_and_merge_data(); df_data = res[0] if res else None; update_text = res[1] if res else ""
-if update_text: st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
+with col_title:
+    online_users = track_user_presence()
+    
+    online_badge = f'<div class="online-badge-container"><span style="height: 8px; width: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #00ff00; margin-right: 6px;"></span><span style="color: #00ff00; font-size: 11px; font-weight: 600; white-space: nowrap;">{online_users} Online</span></div>'
+
+    if SYSTEM_LOGO["light"]:
+        l_sys = SYSTEM_LOGO["light"]
+        st.markdown(f'<div class="main-logo-container"><img src="{l_sys}" class="main-system-logo"><h1 class="main-title-text">Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="main-logo-container"><h1 class="main-title-text">📊 Aksiyon Raporu</h1>{online_badge}</div>', unsafe_allow_html=True)
+
+res = load_and_merge_data()
+df_data = res[0] if res else None
+update_text = res[1] if res else ""
+
+with col_update:
+    if update_text: 
+        st.markdown(f'<div class="update-badge">🔄 {update_text}</div>', unsafe_allow_html=True)
 
 if df_data is not None:
-    mapping = get_column_mapping(df_data); alt_grup_col = mapping.get("Alt Grup"); marka_col = mapping.get("Marka")
-    gruplar = sorted(list(dict.fromkeys([str(x).strip() for x in df_data[alt_grup_col].dropna() if str(x).strip()]))) if alt_grup_col in df_data.columns else []
-    markalar_raw = list(dict.fromkeys([str(x).strip() for x in df_data[marka_col].dropna() if str(x).strip()])) if marka_col in df_data.columns else []
-    pref_order = ["Braun", "Oral-B", "Braun Saç", "Revlon Saç"]; markalar = sorted(markalar_raw, key=lambda x: pref_order.index(x) if x in pref_order else 999)
+    mapping = get_column_mapping(df_data)
+    alt_grup_col = mapping.get("Alt Grup")
+    marka_col = mapping.get("Marka")
+    
+    if alt_grup_col and alt_grup_col in df_data.columns:
+        gruplar = []
+        for x in df_data[alt_grup_col].dropna():
+            v = str(x).strip()
+            if v != "" and v not in gruplar: gruplar.append(v)
+    else: 
+        gruplar = []
+        
+    if marka_col and marka_col in df_data.columns:
+        markalar_raw = []
+        for x in df_data[marka_col].dropna():
+            v = str(x).strip()
+            if v != "" and v not in markalar_raw: markalar_raw.append(v)
+            
+        # ÖZEL MARKA SIRALAMASI
+        preferred_order = ["Braun", "Oral-B", "Braun Saç", "Revlon Saç"]
+        markalar = sorted(markalar_raw, key=lambda x: preferred_order.index(x) if x in preferred_order else 999)
+    else:
+        markalar = []
 
+    # Butonların çok sıkışıp alt alta iki satır olmasını önlemek için sütun genişliğini artırdık
     col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([1.9, 1.7, 1.7, 1.7, 1.4, 2.0])
-    with col_search: search = st.text_input("🔍 Ürün Ara...", key="search_val")
-    with col_marka: filter_marka = st.multiselect("🏷️ Marka", markalar, placeholder="Tümü", key="marka_val")
-    with col_grup: filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü", key="grup_val")
-    with col_plat: filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
-    with col_stat: filter_status = st.selectbox("🎨 Renge Göre", ["🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"], index=None, placeholder="Tümü", key="stat_val")
+    
+    with col_search: 
+        search = st.text_input("🔍 Ürün Ara...", key="search_val")
+    with col_marka:
+        filter_marka = st.multiselect("🏷️ Marka", markalar, placeholder="Tümü", key="marka_val")
+    with col_grup: 
+        filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
+    with col_plat: 
+        filter_platform = st.selectbox("🛒 Platform", ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"], index=None, placeholder="Tümü", key="plat_val")
+    with col_stat: 
+        filter_status = st.selectbox("🎨 Renge Göre", ["🔴 Kırmızı (↓)", "🟢 Yeşil (=)", "🟡 Sarı (↑)"], index=None, placeholder="Tümü", key="stat_val")
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-    if filter_marka and marka_col: df_data = df_data[df_data[marka_col].astype(str).str.strip().isin(filter_marka)]
-    if filter_grup and alt_grup_col: df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
+    
+    if filter_marka and marka_col:
+        df_data = df_data[df_data[marka_col].astype(str).str.strip().isin(filter_marka)]
+        
+    if filter_grup and alt_grup_col: 
+        if "Tümü" not in filter_grup: 
+            df_data = df_data[df_data[alt_grup_col].astype(str).str.strip().isin(filter_grup)]
+            
     if filter_status:
         bs_col = mapping.get("Braun Shop")
         if bs_col:
-            p_list = [filter_platform] if filter_platform else ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]; actual_cols = [mapping.get(p) for p in p_list if mapping.get(p)]
-            def chk_c(r):
-                bv = parse_price(r[bs_col]); 
-                if bv is None: return False
-                for c in actual_cols:
-                    pv = parse_price(r[c])
-                    if pv:
-                        if "🔴" in filter_status and pv < bv: return True
-                        if "🟢" in filter_status and pv == bv: return True
-                        if "🟡" in filter_status and pv > bv: return True
+            p_list = [filter_platform] if filter_platform else ["Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+            actual_cols = [mapping.get(p) for p in p_list]; actual_cols = [c for c in actual_cols if c] 
+            def check_color(row):
+                bs_val = parse_price(row[bs_col])
+                if bs_val is None: return False
+                for col in actual_cols:
+                    p_val = parse_price(row[col])
+                    if p_val is not None:
+                        if "🔴" in filter_status and p_val < bs_val: return True
+                        if "🟢" in filter_status and p_val == bs_val: return True
+                        if "🟡" in filter_status and p_val > bs_val: return True
                 return False
-            df_data = df_data[df_data.apply(chk_c, axis=1)]
+            df_data = df_data[df_data.apply(check_color, axis=1)]
 
-    # Excel formatlama bloğunu orijinal app (8).py'den koruyarak tekrar koydum.
-    tr_time_now = datetime.utcnow() + timedelta(hours=3); current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M"); excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
+    # ================= EXCEL İNDİRME VE FORMATLAMA =================
+    tr_time_now = datetime.utcnow() + timedelta(hours=3)
+    current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
+    excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
+    
     export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"]
     df_export = df_data[export_cols].copy()
-    price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]; price_cols = [mapping.get(p) for p in price_platforms if mapping.get(p) in df_export.columns]
-    for col_name in price_cols: df_export[col_name] = df_export[col_name].apply(parse_price)
-    barcode_col = mapping.get("Barkod"); 
+    
+    price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
+    price_cols = [mapping.get(p) for p in price_platforms if mapping.get(p) in df_export.columns]
+    for col_name in price_cols:
+        df_export[col_name] = df_export[col_name].apply(parse_price)
+        
+    barcode_col = mapping.get("Barkod")
     if barcode_col and barcode_col in df_export.columns:
-        def prs_bc(v): 
+        def parse_barcode(v):
             try: return int(float(str(v).replace(' ', '')))
             except: return v
-        df_export[barcode_col] = df_export[barcode_col].apply(prs_bc)
+        df_export[barcode_col] = df_export[barcode_col].apply(parse_barcode)
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_export.to_excel(writer, index=False, sheet_name='Aksiyon_Raporu'); workbook = writer.book; worksheet = writer.sheets['Aksiyon_Raporu']
+        df_export.to_excel(writer, index=False, sheet_name='Aksiyon_Raporu')
+        workbook = writer.book
+        worksheet = writer.sheets['Aksiyon_Raporu']
+        
         for idx, col_name in enumerate(df_export.columns):
-            excel_col_idx = idx + 1; col_letter = openpyxl.utils.get_column_letter(excel_col_idx)
+            excel_col_idx = idx + 1
+            col_letter = openpyxl.utils.get_column_letter(excel_col_idx)
+            
             if col_name in price_cols:
                 worksheet.column_dimensions[col_letter].width = 12
-                for row in range(2, len(df_export) + 2): worksheet.cell(row=row, column=excel_col_idx).number_format = '#,##0.00'
+                for row in range(2, len(df_export) + 2):
+                    worksheet.cell(row=row, column=excel_col_idx).number_format = '#,##0.00'
+                    
             elif col_name == barcode_col:
                 worksheet.column_dimensions[col_letter].width = 16
-                for row in range(2, len(df_export) + 2): worksheet.cell(row=row, column=excel_col_idx).number_format = '0'
-            else: worksheet.column_dimensions[col_letter].width = 15
+                for row in range(2, len(df_export) + 2):
+                    worksheet.cell(row=row, column=excel_col_idx).number_format = '0'
+            else:
+                worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn_group:
+        # Margin-top ayarı kısıldı ki butonlar daha yukarıda dursun
         st.markdown("<div style='margin-top: 23px;'></div>", unsafe_allow_html=True)
-        btn_cl, btn_ex = st.columns([1, 1])
-        with btn_cl: st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
-        with btn_ex: st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+        btn_clear, btn_excel = st.columns([1, 1])
+        with btn_clear:
+            st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
+        with btn_excel:
+            st.download_button("📥 Excel'e Aktar", output.getvalue(), excel_filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
     display_styled_table(df_data, mapping)
 
-st_autorefresh(interval=180000, key="data_refresher")
+# ================= OTOMATİK SESSİZ RERUN TETİKLEYİCİ =================
+st_autorefresh(interval=180000, limit=None, key="data_refresher")
