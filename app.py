@@ -233,7 +233,7 @@ st.markdown("""
     /* ========================================================= */
     
     .custom-table thead th { 
-        position: sticky; top: 0px !important; z-index: 2000; padding: 12px 18px; text-align: center;
+        position: sticky; top: 0px !important; z-index: 50; padding: 12px 18px; text-align: center;
         color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
@@ -277,12 +277,12 @@ st.markdown("""
     /* ========================================================= */
     .sku-wrapper { position: relative; display: inline-block; cursor: pointer; }
     
-    .sku-thumb { 
-        visibility: hidden; position: absolute; left: 110%; top: 50%; 
-        transform: translateY(-50%) translateX(10px); opacity: 0; 
-        transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff);
-        padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; 
+    .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
+    .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
+    /* Satır hover olduğunda başlığın (50) çok üstüne çıksın */
+    .custom-table tr:hover { z-index: 9999 !important; position: relative; }
+    /* Normal hap hücrelerin havada kalmasını engelle */
+    .custom-table tr { z-index: 1; position: relative; }
         
         /* 1. SİHİRLİ DOKUNUŞ: STREAMLIT'İN 0 GENİŞLİK YAPMASINI ENGELLİYORUZ */
         width: 162px !important; 
