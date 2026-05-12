@@ -72,16 +72,6 @@ components.html(
     <script>
     try {
         const parentDoc = window.parent.document;
-        
-        // Akakçe engeline karşı global referrer gizleyici (Görsellerin yüklenmesi için şart)
-        if (!parentDoc.getElementById("ninja-referer")) {
-            let meta = parentDoc.createElement("meta");
-            meta.id = "ninja-referer";
-            meta.name = "referrer";
-            meta.content = "no-referrer";
-            parentDoc.head.appendChild(meta);
-        }
-        
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
@@ -283,17 +273,38 @@ st.markdown("""
     /* ========================================================= */
 
     /* ========================================================= */
-    /* HOVER THUMBNAIL (GÖRSEL SİHRİ)                            */
+    /* HOVER THUMBNAIL (GÖRSEL SİHRİ) - STREAMLIT ÇÖKMESİNE KARŞI*/
     /* ========================================================= */
-    .sku-wrapper { position: relative; display: inline-block; }
+    .sku-wrapper { position: relative; display: inline-block; cursor: pointer; }
+    
     .sku-thumb { 
-        visibility: hidden; position: absolute; left: 100%; top: 50%; 
+        visibility: hidden; position: absolute; left: 110%; top: 50%; 
         transform: translateY(-50%) translateX(10px); opacity: 0; 
         transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff);
         padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; margin-left: 5px;
+        z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; 
+        
+        /* 1. SİHİRLİ DOKUNUŞ: STREAMLIT'İN 0 GENİŞLİK YAPMASINI ENGELLİYORUZ */
+        width: 162px !important; 
+        height: 162px !important;
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important;
     }
-    .sku-thumb img { width: 150px; height: 150px; object-fit: contain; border-radius: 8px; background: white; display: block; }
+    
+    .sku-thumb img { 
+        /* 2. SİHİRLİ DOKUNUŞ: RESMİ KESİN OLARAK KİTLİYORUZ */
+        width: 150px !important; 
+        height: 150px !important; 
+        min-width: 150px !important; 
+        min-height: 150px !important; 
+        max-width: 150px !important;
+        object-fit: contain !important; 
+        border-radius: 8px; 
+        background: white; 
+        display: block !important; 
+    }
+    
     .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
     .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
     .custom-table tr:hover { z-index: 1000; position: relative; }
@@ -509,7 +520,7 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # SİHİRLİ DOKUNUŞ: Gorsel_URL sütunu da okunacak veriler arasına eklendi
+            # SİHİRLİ DOKUNUŞ: Gorsel_URL sütunu tabloya eklendi
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -571,7 +582,7 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # SİHİRLİ DOKUNUŞ: Görsel özelliği sadece bu bloğa ve tasarıma hiç dokunmadan eklendi!
+            # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini, CSS yapını bozmadan ekliyoruz
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -579,6 +590,7 @@ def display_styled_table(df, mapping):
             inner_content = f'<span class="data-pill" style="{style}">{d_val}</span>'
             
             if has_img:
+                # Hover sihrini "no-referrer" engeli aşacak kuralı ile içine hapsediyoruz
                 inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}" referrerpolicy="no-referrer"></div></div>'
             
             if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link">{inner_content}</a></td>'
