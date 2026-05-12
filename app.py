@@ -72,6 +72,16 @@ components.html(
     <script>
     try {
         const parentDoc = window.parent.document;
+        
+        // Akakçe engeline karşı global referrer gizleyici
+        if (!parentDoc.getElementById("ninja-referer")) {
+            let meta = parentDoc.createElement("meta");
+            meta.id = "ninja-referer";
+            meta.name = "referrer";
+            meta.content = "no-referrer";
+            parentDoc.head.appendChild(meta);
+        }
+        
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
@@ -233,7 +243,7 @@ st.markdown("""
     /* ========================================================= */
     
     .custom-table thead th { 
-        position: sticky; top: 0px !important; z-index: 50 !important; padding: 12px 18px; text-align: center;
+        position: sticky; top: 0px !important; z-index: 2000 !important; padding: 12px 18px; text-align: center;
         color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
@@ -311,10 +321,27 @@ st.markdown("""
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
-    /* BUTON STİLLERİ */
+    /* BUTON STİLLERİ VE ORTALAMA */
     div[data-testid="stDownloadButton"] button, 
     div[data-testid="stButton"] button { 
-        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px;
+        width: 100%; 
+        border-radius: 20px; 
+        font-weight: 600; 
+        border: 1px solid #ddd; 
+        font-size: 13px;
+        padding: 4px 8px; 
+    }
+    
+    div[data-testid="stDownloadButton"] button p, 
+    div[data-testid="stButton"] button p {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.2;
+        margin: 0;
+        height: 100%;
     }
     
     @media (max-width: 950px) and (orientation: landscape) {
@@ -652,13 +679,14 @@ if df_data is not None:
             v = str(x).strip()
             if v != "" and v not in markalar_raw: markalar_raw.append(v)
             
-        # Özel Marka Sıralaması
+        # ÖZEL MARKA SIRALAMASI
         preferred_order = ["Braun", "Oral-B", "Braun Saç", "Revlon Saç"]
         markalar = sorted(markalar_raw, key=lambda x: preferred_order.index(x) if x in preferred_order else 999)
     else:
         markalar = []
 
-    col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([2.0, 1.8, 1.8, 1.8, 1.4, 1.6])
+    # Butonların çok sıkışıp alt alta iki satır olmasını önlemek için sütun genişliğini artırdık
+    col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([1.9, 1.7, 1.7, 1.7, 1.4, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
@@ -740,7 +768,8 @@ if df_data is not None:
                 worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn_group:
-        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+        # Margin-top ayarı kısıldı ki butonlar daha yukarıda dursun
+        st.markdown("<div style='margin-top: 23px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
             st.button("🧹 Filtre Temizle", on_click=reset_filters, use_container_width=True)
