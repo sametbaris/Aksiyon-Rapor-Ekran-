@@ -647,14 +647,11 @@ if df_data is not None:
         gruplar = []
         
     if marka_col and marka_col in df_data.columns:
-        markalar_raw = []
+        markalar = []
         for x in df_data[marka_col].dropna():
             v = str(x).strip()
-            if v != "" and v not in markalar_raw: markalar_raw.append(v)
-            
-        # Özel Marka Sıralaması
-        preferred_order = ["Braun", "Oral-B", "Braun Saç", "Revlon Saç"]
-        markalar = sorted(markalar_raw, key=lambda x: preferred_order.index(x) if x in preferred_order else 999)
+            if v != "" and v not in markalar: markalar.append(v)
+        markalar = sorted(markalar)
     else:
         markalar = []
 
