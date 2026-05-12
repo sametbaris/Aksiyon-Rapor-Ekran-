@@ -81,7 +81,7 @@ components.html(
             meta.content = "no-referrer";
             parentDoc.head.appendChild(meta);
         }
-        
+
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
@@ -432,27 +432,34 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
-# LİNK OLUŞTURMA MOTORU (Orijinal app 7)
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
     if label == "Aksiyon":
-        hl = row.get("Hidden_Link")
-        if pd.notna(hl) and str(hl).startswith("http"): 
-            return str(hl)
-        return f"https://www.akakce.com/arama/?q={val or barcode}"
+        hidden_link = row.get("Hidden_Link")
+        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): 
+            return str(hidden_link)
+        if val: 
+            return f"https://www.akakce.com/arama/?q={val}"
+        if barcode: 
+            return f"https://www.akakce.com/arama/?q={barcode}"
+        return None
         
     if val.startswith("http"): 
         return val
         
     if label == "Braun Shop":
-        gl = row.get("GS_BS_Link")
-        if pd.notna(gl) and str(gl).startswith("http"): 
-            return str(gl)
-        return f"https://www.braunshop.com.tr/arama?q={val or barcode}"
+        gs_link = row.get("GS_BS_Link")
+        if pd.notna(gs_link) and str(gs_link).startswith("http"): 
+            return str(gs_link)
+        if val: 
+            return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
+        if barcode: 
+            return f"https://www.braunshop.com.tr/arama?q={barcode}"
+        return None
         
-    if val:
+    if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
@@ -469,31 +476,39 @@ def build_smart_link(label, raw_id, row):
 @st.cache_data(ttl=180)  
 def load_and_merge_data():
     client = get_gspread_client()
-    if not client: return None, ""
-    
+    if not client:
+        st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
+        return None, ""
+
     try:
         sh = client.open_by_key(SHEET_ID)
         worksheet = sh.worksheet("Guncel")
         
         update_text = ""
-        try: 
-            update_text = str(worksheet.acell("N1").value).replace('"', '').strip()
-        except: 
-            pass
-            
+        try:
+            update_text = worksheet.acell("N1").value
+            update_text = str(update_text).replace('"', '').strip()
+        except: pass
+
         data = worksheet.get_all_values()
         if not data: return None, update_text
+            
+        df_fiyat = pd.DataFrame(data[1:], columns=data[0])
+        df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        df_fiyat = pd.DataFrame(data[1:], columns=[c.strip() for c in data[0]])
-        bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), "Barkod")
-        df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
+        bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
+        if bc_col: 
+            df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
+        else:
+            df_fiyat["Barkod_Int"] = ""
         
-        # --- BRAUN SHOP HİPERLİNKLERİNİ ÇEK (Orijinal app 7) ---
         gsheet_bs_links = {}
         try:
             export_data = client.export(SHEET_ID, format='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             wb_gs = openpyxl.load_workbook(io.BytesIO(export_data), data_only=False)
             ws_gs = wb_gs["Guncel"]
+            
             headers_gs = [str(c.value).strip() if c.value else "" for c in ws_gs[1]]
             idx_bc_gs = next((i for i, h in enumerate(headers_gs) if "barkod" in h.lower()), None)
             idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
@@ -505,18 +520,21 @@ def load_and_merge_data():
                     url = bs_cell.hyperlink.target if bs_cell.hyperlink else None
                     if bc_val and url: 
                         gsheet_bs_links[bc_val] = url
-        except: 
-            pass
+        except Exception as e: pass
             
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
-            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), "Barkod")
-            df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
             
-            # --- AKAKÇE HİPERLİNKLERİNİ ÇEK (Orijinal app 7) ---
+            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
+            map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
+            if map_bc_col and map_bc_col in df_map.columns:
+                df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
+            else:
+                df_map["Barkod_Int"] = ""
+                
             wb_map = openpyxl.load_workbook(MAPPING_FILE, data_only=True)
             ws_map = wb_map.active
             headers_map = [str(c.value).strip() if c.value else "" for c in ws_map[1]]
@@ -526,21 +544,22 @@ def load_and_merge_data():
             
             if idx_bc_map is not None and idx_br_map is not None:
                 for r_idx in range(2, ws_map.max_row + 1):
-                    bc_v = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
+                    bc_val = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
                     b_cell = ws_map.cell(row=r_idx, column=idx_br_map+1)
-                    if bc_v and b_cell.hyperlink: 
-                        ext_links[bc_v] = b_cell.hyperlink.target
+                    if bc_val and b_cell.hyperlink: 
+                        ext_links[bc_val] = b_cell.hyperlink.target
                         
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # Marka ve Gorsel_URL de eklendi
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
             return df_final.fillna(""), update_text
             
         return df_fiyat.fillna(""), update_text
-    except Exception as e: 
+        
+    except Exception as e:
+        st.error(f"Google bağlantı hatası: {e}")
         return None, ""
 
 # ================= RENDER TABLO =================
@@ -551,7 +570,7 @@ def display_styled_table(df, mapping):
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     
     for label, real in mapping.items():
-        if label == "Marka": continue # Markayı tabloda gizle
+        if label == "Marka": continue
         if real:
             count_html = ""
             if label in pazaryerleri:
@@ -576,7 +595,7 @@ def display_styled_table(df, mapping):
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
-            if not real or label == "Marka": continue # Markayı hücrelerde gösterme
+            if not real or label == "Marka": continue
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
             
@@ -591,7 +610,8 @@ def display_styled_table(df, mapping):
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
                 
-            map_key = refs.get(label); target_id = row.get(map_key, "")
+            map_key = refs.get(label)
+            target_id = row.get(map_key, "") if map_key else ""
             url = build_smart_link(label, target_id, row)
             
             # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini, CSS yapını bozmadan ekliyoruz
