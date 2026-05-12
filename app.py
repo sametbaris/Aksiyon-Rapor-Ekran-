@@ -233,7 +233,7 @@ st.markdown("""
     /* ========================================================= */
     
     .custom-table thead th { 
-        position: sticky; top: 0px !important; z-index: 20; padding: 12px 18px; text-align: center;
+        position: sticky; top: 0px !important; z-index: 2000; padding: 12px 18px; text-align: center;
         color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
         background-color: var(--dynamic-bg-color, #ffffff) !important;
         box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
