@@ -241,12 +241,9 @@ def track_user_presence():
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
-    """ Değeri temizler ama Jet Hızı botunun bastığı URL yollarını (.html veya slug) korur! """
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", "null", ""]: return ""
     v = str(val).strip()
-    # EĞER METNİN İÇİNDE LİNK YAPILARI VARSA (http, slash, .html veya tireli slug) BOZMADAN DÖNDÜR
-    if v.startswith("http") or "/" in v or ".html" in v.lower() or "-" in v: 
-        return v
+    if v.startswith("http") or "/" in v: return v 
     return v.split('.')[0]
 
 def parse_price(val):
@@ -273,17 +270,16 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
-# ================= AKILLI LİNK MOTORU (JET HIZI BOTUNA UYUMLU!) =================
+# ================= AKILLI LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
-    # 📌 EĞER GELEN DEĞER ZATEN BİR LİNK İSE ANINDA DÖNDÜR
-    if val.startswith("http"): 
-        return val
+    # Herhangi bir durumda direkt link veya yol varsa anında döndür
+    if val.startswith("http"): return val
         
     if label == "Aksiyon":
-        # Google Sheets HYPERLINK Formül Okuyucusu (Yeni Bot İçin)
+        # Google Sheets'ten çekilen HYPERLINK veya Hidden Link
         gs_ak = str(row.get("GS_AK_Link", "")).strip()
         if gs_ak.startswith("http"): return gs_ak
         if gs_ak.startswith("/"): return f"https://www.akakce.com{gs_ak}"
@@ -291,28 +287,26 @@ def build_smart_link(label, raw_id, row):
         hidden_link = str(row.get("Hidden_Link", "")).strip()
         if hidden_link.startswith("http"): return hidden_link
         
-        # 📌 AKILLI TANIMA: Eğer val içinde '.html' varsa, bu bir ID değil, bir url path'idir (Yeni Bot Formatı)
+        # 📌 KRİTİK DÜZELTME: Eğer değer '.html' içeriyorsa direkt yol yap.
         if val and ".html" in val.lower():
             if val.startswith("/"): return f"https://www.akakce.com{val}"
             else: return f"https://www.akakce.com/{val}"
             
-        # Eski sistem: Sadece ID gelirse
-        if val: return f"https://www.akakce.com/arama/?q={val}"
+        # 📌 KRİTİK DÜZELTME: ID ile (sayı ile) arama yapmak artık Akakçe'de çalışmıyor.
+        # Bu yüzden eğer elimizde sadece sayısal ID varsa, bunu yoksayıp BARKOD ile arama atıyoruz!
         if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
+        if val: return f"https://www.akakce.com/arama/?q={val}"
         return None
         
     if label == "Braun Shop":
-        # Google Sheets HYPERLINK Formül Okuyucusu (Yeni Bot İçin)
         gs_link = str(row.get("GS_BS_Link", "")).strip()
         if gs_link.startswith("http"): return gs_link
         if gs_link.startswith("/"): return f"https://www.braunshop.com.tr{gs_link}"
         
-        # 📌 AKILLI TANIMA: Eğer val içinde harfler veya tire (-) varsa, bu ID değil, URL slug'ıdır (Yeni Bot Formatı)
         if val and not val.isdigit():
             if val.startswith("/"): return f"https://www.braunshop.com.tr{val}"
             else: return f"https://www.braunshop.com.tr/{val}"
             
-        # Eski sistem: Sadece Sayısal ID gelirse
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
@@ -322,12 +316,10 @@ def build_smart_link(label, raw_id, row):
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
-        
     if barcode:
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
-        
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
@@ -372,7 +364,6 @@ def load_and_merge_data():
             idx_bs_gs = next((i for i, h in enumerate(headers_gs) if "braun shop" in h.lower()), None)
             idx_ak_gs = next((i for i, h in enumerate(headers_gs) if "aksiyon" in h.lower() or "akak" in h.lower()), None)
             
-            # 📌 YENİ BOTUN "=HYPERLINK(...)" FORMÜLLERİNİ HÜCREDEN SÖKÜP ALAN MOTOR
             def extract_url_from_cell(cell):
                 if cell.hyperlink: return str(cell.hyperlink.target)
                 cv = str(cell.value)
@@ -421,7 +412,6 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # Gorsel_URL ve Marka Sütunları
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -483,7 +473,7 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # 📌 THUMBNAIL ÖZELLİĞİ EKLENDİ
+            # THUMBNAIL GÖRSEL OLUŞTURMA
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -546,7 +536,7 @@ if df_data is not None:
     else: 
         gruplar = []
         
-    # 📌 ÖZEL MARKA SIRALAMASI
+    # ÖZEL MARKA SIRALAMASI
     if marka_col and marka_col in df_data.columns:
         markalar_raw = []
         for x in df_data[marka_col].dropna():
