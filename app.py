@@ -148,6 +148,9 @@ st.markdown("""
     .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal, ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment { display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important; }
     
+    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
+    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
+    
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     
     .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; will-change: transform, filter; }
@@ -194,9 +197,11 @@ def get_gspread_client():
             creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         elif os.path.exists("service_account.json"):
             creds = Credentials.from_service_account_file("service_account.json", scopes=scope)
-        else: return None
+        else:
+            return None
         return gspread.authorize(creds)
-    except Exception: return None
+    except Exception:
+        return None
 
 # ================= ZİYARETÇİ TAKİP MOTORU =================
 @st.cache_data(ttl=60)
@@ -260,26 +265,22 @@ def get_column_mapping(df):
     return {
         "Marka": find_col("Marka"), "Ürün Adı": find_col("Ürün Adı"),
         "Barkod": find_col("Barkod"), "Ürün Kodu": find_col("Kodu", exclude="Barkod"),
-        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon") or find_col("Akakçe"),
+        "Alt Grup": find_col("Grup"), "Aksiyon": find_col("Aksiyon"),
         "Braun Shop": find_col("Braun Shop"), "Media Markt": find_col("Media Markt"),
         "Teknosa": find_col("Teknosa"), "Vatan": find_col("Vatan"),
         "Trendyol": find_col("Trendyol"), "Hepsiburada": find_col("Hepsiburada") or find_col("Hepsi"),
         "Amazon": find_col("Amazon")
     }
 
-# ================= AKILLI LİNK MOTORU =================
+# ================= KUSURSUZ LİNK MOTORU (HATASIZ) =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
     if label == "Aksiyon":
-        hidden_link = row.get("Hidden_Link")
-        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
-        if val: return f"https://www.akakce.com/arama/?q={val}"
-        if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
-        return None
-    if val.startswith("http"): return val
-
+        # 1. Önce yeni sistem olan CSS Code kolonundan çektiğimiz Hyperlink'i dene
+        hl_ak = row.get("Hidden_AK_Link")
+        if pd.notna(hl_ak) and str(hl_ak).startswith("http"): return str(hl_ak)
         
         # 2. Eskiden kalan Braun Ürün Kodu kolonundan çektiğimiz Hyperlink'i dene
         hidden_link = row.get("Hidden_Link")
@@ -292,7 +293,9 @@ def build_smart_link(label, raw_id, row):
         if val: return f"https://www.akakce.com/arama/?q={val}"
         if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
         return None
-        
+
+    if val.startswith("http"): return val
+
     if label == "Braun Shop":
         # 1. BS Data ID kolonundaki Hyperlink'i dene
         hl_bs = row.get("Hidden_BS_Link")
@@ -305,18 +308,18 @@ def build_smart_link(label, raw_id, row):
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
-        
-    if val.startswith("http"): return val
-    
+
     if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
+
     if barcode:
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
+
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
@@ -347,8 +350,7 @@ def load_and_merge_data():
             df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
         else:
             df_fiyat["Barkod_Int"] = ""
-            
-        # --- GOOGLE SHEETS FORMÜL OKUYUCU ---
+        
         gsheet_bs_links = {}
         gsheet_ak_links = {}
         try:
@@ -386,7 +388,6 @@ def load_and_merge_data():
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         df_fiyat["GS_AK_Link"] = df_fiyat["Barkod_Int"].map(gsheet_ak_links)
         
-        # --- EXCEL MAPPING DOSYASI OKUYUCU (SORUN BURADAYDI, ÇÖZÜLDÜ!) ---
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -415,17 +416,14 @@ def load_and_merge_data():
                     bc_val = clean_val(ws_map.cell(row=r_idx, column=idx_bc_map+1).value)
                     if not bc_val: continue
                     
-                    # Eski Sistem (Braun Ürün Kodu sütunundan link çekme)
                     if idx_br_map is not None:
                         c = ws_map.cell(row=r_idx, column=idx_br_map+1)
                         if c.hyperlink: ext_links[bc_val] = c.hyperlink.target
                     
-                    # Akakçe İçin DOĞRU SÜTUN (CSS Code)
                     if idx_css_map is not None:
                         c = ws_map.cell(row=r_idx, column=idx_css_map+1)
                         if c.hyperlink: ak_links[bc_val] = c.hyperlink.target
                     
-                    # Braun Shop İçin DOĞRU SÜTUN (BS Data ID)
                     if idx_bs_map is not None:
                         c = ws_map.cell(row=r_idx, column=idx_bs_map+1)
                         if c.hyperlink: bs_links[bc_val] = c.hyperlink.target
@@ -453,7 +451,7 @@ def display_styled_table(df, mapping):
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     
     for label, real in mapping.items():
-        if label == "Marka": continue # Markayı gizle
+        if label == "Marka": continue # Markayı tabloda gizle
         if real:
             count_html = ""
             if label in pazaryerleri:
@@ -495,6 +493,7 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
+            # --- THUMBNAIL GÖRSEL OLUŞTURMA ---
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -557,6 +556,7 @@ if df_data is not None:
     else: 
         gruplar = []
         
+    # ÖZEL MARKA SIRALAMASI
     if marka_col and marka_col in df_data.columns:
         markalar_raw = []
         for x in df_data[marka_col].dropna():
