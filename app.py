@@ -88,7 +88,6 @@ components.html(
             if (rgb && rgb.length >= 3) {
                 let brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
                 
-                // Arka plan rengini ve gölge tonunu CSS değişkeni olarak ana sayfaya gönder
                 parentDoc.documentElement.style.setProperty('--dynamic-bg-color', bgColor);
                 parentDoc.documentElement.style.setProperty('--dynamic-shadow', brightness < 128 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.12)');
                 
@@ -100,7 +99,6 @@ components.html(
                 }
                 
                 if (brightness < 128) {
-                    /* Karanlık Modda invert olan logolara hover yapıldığında özel silüet gölgesi/parlaması (beyaz gölge) */
                     styleTag.innerHTML = `.logo-light { display: none !important; } .logo-dark { display: inline-block !important; } .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; } .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }`;
                     parentDoc.documentElement.classList.add('dark-theme');
                     parentDoc.documentElement.classList.remove('light-theme');
@@ -119,168 +117,62 @@ components.html(
 # ================= CSS =================
 st.markdown("""
 <style>
-    /* ========================================================= */
-    /* DEFAULT %75 ZOOM HİSSİ İÇİN GLOBAL ÖLÇEKLENDİRME          */
-    /* ========================================================= */
-    html, body, [class*="css"] {
-        font-size: 14px !important; /* Varsayılan metinleri küçültür */
-    }
-    
-    .block-container {
-        max-width: 100% !important; /* Ekran genişliğini maksimuma çeker */
-        padding-top: 1.5rem !important; 
-        padding-bottom: 1rem !important;
-    }
-    
-    header[data-testid="stHeader"] {
-        height: 2.5rem !important;
-        background: transparent !important; 
-    }
-    /* ========================================================= */
-
-    * {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-    }
-
+    html, body, [class*="css"] { font-size: 14px !important; }
+    .block-container { max-width: 100% !important; padding-top: 1.5rem !important; padding-bottom: 1rem !important; }
+    header[data-testid="stHeader"] { height: 2.5rem !important; background: transparent !important; }
+    * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
     :root { --header-color: #888; --pill-default-bg: rgba(128, 128, 128, 0.1); }
     
-    /* RESPONSIVE LOGO TEMA GÖSTERİM KURALLARI */
     .logo-light { display: inline-block !important; }
     .logo-dark { display: none !important; }
-    
     .dark-theme .logo-light, html[data-theme="dark"] .logo-light { display: none !important; }
     .dark-theme .logo-dark, html[data-theme="dark"] .logo-dark { display: inline-block !important; }
     .dark-theme .logo-dark.invert-logo, html[data-theme="dark"] .logo-dark.invert-logo { filter: brightness(0) invert(1) !important; }
 
-    /* MOBİL VE MASAÜSTÜ UYUMLU RESPONSIVE BAŞLIK KONTEYNERİ */
-    .main-logo-container { 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 20px; 
-        flex-wrap: wrap;
-    }
-    
+    .main-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
     .main-system-logo { height: 50px; width: auto; object-fit: contain; transition: height 0.3s; }
     .main-title-text { margin: 0; display: inline-block; font-size: 1.8rem; font-weight: 700; transition: font-size 0.3s; }
-    
-    .online-badge-container {
-        display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); 
-        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); 
-    }
+    .online-badge-container { display: flex; align-items: center; gap: 6px; background: rgba(0, 255, 0, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0, 255, 0, 0.2); }
     
     @media (max-width: 768px) {
         .main-logo-container { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; }
         .main-system-logo { height: 40px; }
         .main-title-text { font-size: 1.4rem; }
         .online-badge-container { margin-left: 0 !important; margin-top: 2px; }
-        
-        .update-badge {
-            float: none !important; margin: 0 auto 15px auto !important;
-            width: fit-content !important; display: block !important;
-        }
+        .update-badge { float: none !important; margin: 0 auto 15px auto !important; width: fit-content !important; display: block !important; }
     }
     
     div[data-baseweb="popover"] { transition: none !important; animation: none !important; will-change: auto !important; }
     div[data-baseweb="popover"] ul { transform: translateZ(0) !important; backface-visibility: hidden !important; }
-    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span {
-        -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 13px !important;
-        font-weight: 500 !important; letter-spacing: normal !important;
-    }
+    div[data-baseweb="popover"] [role="option"], div[data-baseweb="popover"] [role="option"] span { text-rendering: optimizeLegibility !important; font-family: inherit !important; font-size: 13px !important; font-weight: 500 !important; letter-spacing: normal !important; }
     
-    /* TABLO TASARIMI VE TİTREME (JITTER) İPTALİ */
-    .table-container { 
-        width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; 
-        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important;
-    }
-    
-    /* SCROLLBAR */
+    .table-container { width: 100%; margin-top: 10px; overflow: auto; max-height: 65vh; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: none !important; }
     .table-container::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
     .table-container::-webkit-scrollbar-track { background: transparent !important; }
-    
-    .table-container::-webkit-scrollbar-thumb {
-        background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; 
-        transition: background-color 0.3s ease-in-out !important;
-    }
-    
+    .table-container::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; transition: background-color 0.3s ease-in-out !important; }
     .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
     .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
     
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
-    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment {
-        display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important;
-    }
+    ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment { display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important; }
     
     .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
     .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
     
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     
-    /* ========================================================= */
-    /* BAŞLIK LOGOLARI: LIFT & DROP-SHADOW (SİLÜET GÖLGESİ)      */
-    /* ========================================================= */
-    .header-logo { 
-        height: 26px; 
-        width: auto; 
-        max-width: 120px; 
-        object-fit: contain; 
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; 
-        will-change: transform, filter;
-    }
-    .header-logo:hover { 
-        transform: scale3d(1.15, 1.15, 1) translateZ(0); 
-        /* Kutunun değil, direkt şeffaf PNG'nin/Logonun kendisine gölge verir */
-        filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.25)); 
-    }
+    .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; will-change: transform, filter; }
+    .header-logo:hover { transform: scale3d(1.15, 1.15, 1) translateZ(0); filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.25)); }
+    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; }
     
-    /* Ters çevrilmiş (invert) logolar için yedek hover kuralı CSS'te de bulunsun (Garanti olsun) */
-    .dark-theme .logo-dark.invert-logo:hover, html[data-theme="dark"] .logo-dark.invert-logo:hover { 
-        filter: brightness(0) invert(1) drop-shadow(0px 6px 10px rgba(255,255,255,0.4)) !important; 
-    }
-    /* ========================================================= */
-    
-    .custom-table thead th { 
-        position: sticky; top: 0px !important; z-index: 50 !important; padding: 12px 18px; text-align: center;
-        color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px;
-        background-color: var(--dynamic-bg-color, #ffffff) !important;
-        box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important;
-        border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important;
-    }
-    
+    .custom-table thead th { position: sticky; top: 0px !important; z-index: 50 !important; padding: 12px 18px; text-align: center; color: var(--header-color); font-weight: 500; text-transform: uppercase; font-size: 10px; background-color: var(--dynamic-bg-color, #ffffff) !important; box-shadow: 0 -2px 0 var(--dynamic-bg-color, #ffffff), 0 8px 15px -4px var(--dynamic-shadow, rgba(0,0,0,0.15)) !important; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.1) !important; }
     .custom-table td { padding: 8px 10px; text-align: center; white-space: nowrap; border-top: none !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid rgba(128,128,128,0.06) !important; }
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
-    /* ========================================================= */
-    /* HÜCRE İÇİ HOVER EFEKTİ (KUSURSUZ LIFT & FLOAT)            */
-    /* ========================================================= */
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
     
-    .data-pill { 
-        padding: 5px 12px; 
-        display: inline-flex; 
-        align-items: center;
-        justify-content: center;
-        border-radius: 20px; 
-        font-size: 13px;
-        line-height: 1.2;
-        /* Boyut değiştirmeden sadece pozisyon ve gölgeyi hareket ettir */
-        transform: translateY(0);
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        backface-visibility: hidden;
-        -webkit-font-smoothing: antialiased;
-        will-change: transform;
-    }
-    
-    a.data-link:hover .data-pill { 
-        /* Elementi esnetmek/büyütmek yerine 3 piksel yukarı kaydır */
-        transform: translateY(-3px); 
-        box-shadow: 0px 5px 12px rgba(0,0,0,0.15); 
-        cursor: pointer; 
-    }
-    /* ========================================================= */
+    .data-pill { padding: 5px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 13px; line-height: 1.2; transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); backface-visibility: hidden; -webkit-font-smoothing: antialiased; will-change: transform; }
+    a.data-link:hover .data-pill { transform: translateY(-3px); box-shadow: 0px 5px 12px rgba(0,0,0,0.15); cursor: pointer; }
 
     /* ========================================================= */
     /* HOVER THUMBNAIL (GÖRSEL SİHRİ) - STREAMLIT ÇÖKMESİNE KARŞI*/
@@ -293,28 +185,10 @@ st.markdown("""
         transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff);
         padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; 
-        
-        /* STREAMLIT'İN 0 GENİŞLİK YAPMASINI ENGELLİYORUZ */
-        width: 162px !important; 
-        height: 162px !important;
-        display: flex !important; 
-        align-items: center !important; 
-        justify-content: center !important;
+        width: 162px !important; height: 162px !important; display: flex !important; align-items: center !important; justify-content: center !important;
     }
     
-    .sku-thumb img { 
-        /* RESMİ KESİN OLARAK KİTLİYORUZ */
-        width: 150px !important; 
-        height: 150px !important; 
-        min-width: 150px !important; 
-        min-height: 150px !important; 
-        max-width: 150px !important;
-        object-fit: contain !important; 
-        border-radius: 8px; 
-        background: white; 
-        display: block !important; 
-    }
-    
+    .sku-thumb img { width: 150px !important; height: 150px !important; min-width: 150px !important; min-height: 150px !important; max-width: 150px !important; object-fit: contain !important; border-radius: 8px; background: white; display: block !important; }
     .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
     .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
     /* ========================================================= */
@@ -323,21 +197,15 @@ st.markdown("""
     
     /* BUTON STİLLERİ VE ORTALAMA */
     div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { 
-        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; 
-    }
+    div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; }
     div[data-testid="stDownloadButton"] button p, 
-    div[data-testid="stButton"] button p { 
-        display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; 
-    }
+    div[data-testid="stButton"] button p { display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; }
     
     @media (max-width: 950px) and (orientation: landscape) {
-        div[data-testid="stButton"] button p,
-        div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
+        div[data-testid="stButton"] button p, div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
         div[data-testid="stButton"] button p::before { content: "🧹"; font-size: 16px !important; visibility: visible; }
         div[data-testid="stDownloadButton"] button p::before { content: "📥"; font-size: 16px !important; visibility: visible; }
     }
-    
     .logo-dark { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -401,18 +269,12 @@ def track_user_presence():
         
     return get_online_count()
 
-# ================= YARDIMCI FONKSİYONLAR VE LİNK OLUŞTURMA =================
+# ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
-    if pd.isna(val): return ""
+    if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
-    if v.lower() in ["nan", "none", "null", ""]: return ""
     if v.startswith("http"): return v
-    
-    # "nan.0" veya ondalıklı sayı gibi gelen veriyi temizle
-    clean_str = v.split('.')[0]
-    if clean_str.lower() in ["nan", "none", "null", ""]: return ""
-    
-    return clean_str
+    return v.split('.')[0]
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
@@ -438,26 +300,28 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
+# ================= KUSURSUZ LİNK OLUŞTURUCU =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
+    # 📌 EĞER GELEN VERİ ZATEN BİR LİNK İSE:
+    # Akakçe ve Braun Shop botun artık hücrelere ID yerine direkt tam URL yazıyor.
+    # Bu kontrol, o URL'leri bozulmadan anında geri döndürür. (Senin screenshotlarındaki sorunu bu çözer)
+    if val.startswith("http"): 
+        return val
+
+    # Eğer tam URL değilse, eski sistem gibi ID'den link üretmeye devam et:
     if label == "Aksiyon":
-        hidden_link = clean_val(row.get("Hidden_Link", ""))
-        if hidden_link.startswith("http"): return hidden_link
-        
-        # SADECE GEÇERLİ BİR ARAMA PARAMETRESİ VARSA LİNK OLUŞTUR
-        search_query = val or barcode
-        if search_query: return f"https://www.akakce.com/arama/?q={search_query}"
+        hidden_link = row.get("Hidden_Link")
+        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
+        if val: return f"https://www.akakce.com/arama/?q={val}"
+        if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
         return None
         
-    if val.startswith("http"): return val
-    
     if label == "Braun Shop":
-        gs_link = clean_val(row.get("GS_BS_Link", ""))
-        if gs_link.startswith("http"): return gs_link
-        
-        # SADECE GEÇERLİ BİR ID VEYA BARKOD VARSA LİNK OLUŞTUR
+        gs_link = row.get("GS_BS_Link")
+        if pd.notna(gs_link) and str(gs_link).startswith("http"): return str(gs_link)
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
@@ -547,7 +411,7 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # MARKA VE GORSEL URL EKLENDİ
+            # Gorsel_URL ve Marka sütunları eklendi
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -593,7 +457,7 @@ def display_styled_table(df, mapping):
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
-            if not real or label == "Marka": continue # Markayı verilerde gizle
+            if not real or label == "Marka": continue # Markayı gizle
             
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
@@ -609,11 +473,10 @@ def display_styled_table(df, mapping):
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
                 
-            map_key = refs.get(label)
-            target_id = row.get(map_key, "") if map_key else ""
+            map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # THUMBNAIL ÖZELLİĞİ
+            # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini ekliyoruz
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -732,7 +595,6 @@ if df_data is not None:
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
-    # Marka sütununu excelden gizle
     export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"]
     df_export = df_data[export_cols].copy()
     
