@@ -72,6 +72,16 @@ components.html(
     <script>
     try {
         const parentDoc = window.parent.document;
+        
+        // Akakçe engeline karşı global referrer gizleyici
+        if (!parentDoc.getElementById("ninja-referer")) {
+            let meta = parentDoc.createElement("meta");
+            meta.id = "ninja-referer";
+            meta.name = "referrer";
+            meta.content = "no-referrer";
+            parentDoc.head.appendChild(meta);
+        }
+
         setInterval(() => {
             const bgColor = window.getComputedStyle(parentDoc.body).backgroundColor;
             let rgb = bgColor.match(/\\d+/g);
@@ -300,11 +310,12 @@ st.markdown("""
     
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
-    /* BUTON STİLLERİ VE ORTALAMA EKLENDİ */
+    /* BUTON STİLLERİ VE ORTALAMA */
     div[data-testid="stDownloadButton"] button, 
     div[data-testid="stButton"] button { 
-        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px;
+        width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; 
     }
+    
     div[data-testid="stDownloadButton"] button p, 
     div[data-testid="stButton"] button p { 
         display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; 
@@ -381,6 +392,7 @@ def track_user_presence():
     return get_online_count()
 
 # ================= YARDIMCI FONKSİYONLAR =================
+# BİREBİR PAYLAŞTIĞIN ÇALIŞAN KOD!
 def clean_val(val):
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
@@ -411,6 +423,7 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
+# BİREBİR PAYLAŞTIĞIN ÇALIŞAN KOD!
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
@@ -462,7 +475,7 @@ def load_and_merge_data():
         df_fiyat = pd.DataFrame(data[1:], columns=data[0])
         df_fiyat.columns = [c.strip() for c in df_fiyat.columns]
         
-        # GÜVENLİK KORUMASI: Barkod sütunu hiç yoksa bile program çökmeyecek!
+        # BİREBİR PAYLAŞTIĞIN ÇALIŞAN KOD!
         bc_col = next((c for c in df_fiyat.columns if "barkod" in c.lower()), None)
         if bc_col: 
             df_fiyat["Barkod_Int"] = df_fiyat[bc_col].apply(clean_val)
@@ -492,7 +505,6 @@ def load_and_merge_data():
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
             
-            # GÜVENLİK KORUMASI: Sütun haritalama tablosunda bulunamazsa çökmeyecek
             map_bc_col = next((c for c in df_map.columns if "barkod" in c.lower()), None)
             if map_bc_col and map_bc_col in df_map.columns:
                 df_map["Barkod_Int"] = df_map[map_bc_col].apply(clean_val)
@@ -512,7 +524,7 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # SADECE MARKA VE GORSEL_URL BURAYA EKLENDİ
+            # --- EKLENEN TEK YER: Marka ve Gorsel_URL okunması için ---
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -532,7 +544,7 @@ def display_styled_table(df, mapping):
     html = '<div class="table-container"><table class="custom-table"><thead><tr>'
     
     for label, real in mapping.items():
-        if label == "Marka": continue
+        if label == "Marka": continue # EKLENDİ: Marka sütunu tabloda gizlensin
         
         if real:
             count_html = ""
@@ -558,7 +570,7 @@ def display_styled_table(df, mapping):
     for _, row in df.iterrows():
         html += '<tr>'
         for label, real in mapping.items():
-            if not real or label == "Marka": continue
+            if not real or label == "Marka": continue # EKLENDİ: Marka sütunu içerikte gizlensin
             
             val = str(row[real]); d_val = "" if val.lower() in ["nan", "none", ""] else val; style = ""
             bs_col_name = mapping.get("Braun Shop")
@@ -574,10 +586,11 @@ def display_styled_table(df, mapping):
                 if any(x in label.lower() for x in ["barkod", "kodu", "grup", "marka"]): style = 'background-color: transparent;'
                 else: style = 'background-color: var(--pill-default-bg);'
                 
+            # BİREBİR PAYLAŞTIĞIN ÇALIŞAN KOD!
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini, CSS yapını bozmadan ekliyoruz
+            # --- EKLENEN KISIM: Thumbnail Görsel İçin HTML Entegresi ---
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -586,6 +599,7 @@ def display_styled_table(df, mapping):
             
             if has_img:
                 inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}" referrerpolicy="no-referrer"></div></div>'
+            # -----------------------------------------------------------
             
             if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link">{inner_content}</a></td>'
             else: html += f'<td>{inner_content}</td>'
@@ -594,14 +608,14 @@ def display_styled_table(df, mapping):
 
 # ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
-if "marka_val" not in st.session_state: st.session_state.marka_val = []
+if "marka_val" not in st.session_state: st.session_state.marka_val = [] # Eklendi
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
 if "plat_val" not in st.session_state: st.session_state.plat_val = None
 if "stat_val" not in st.session_state: st.session_state.stat_val = None
 
 def reset_filters():
     st.session_state.search_val = ""
-    st.session_state.marka_val = []
+    st.session_state.marka_val = [] # Eklendi
     st.session_state.grup_val = []
     st.session_state.plat_val = None
     st.session_state.stat_val = None
@@ -631,7 +645,7 @@ with col_update:
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
-    marka_col = mapping.get("Marka")
+    marka_col = mapping.get("Marka") # Eklendi
     
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
@@ -641,23 +655,24 @@ if df_data is not None:
     else: 
         gruplar = []
         
+    # --- EKLENEN KISIM: Marka Filtresi ve Özel Sıralama ---
     if marka_col and marka_col in df_data.columns:
         markalar_raw = []
         for x in df_data[marka_col].dropna():
             v = str(x).strip()
             if v != "" and v not in markalar_raw: markalar_raw.append(v)
-            
         preferred_order = ["Braun", "Oral-B", "Braun Saç", "Revlon Saç"]
         markalar = sorted(markalar_raw, key=lambda x: preferred_order.index(x) if x in preferred_order else 999)
     else:
         markalar = []
+    # ------------------------------------------------------
 
     # Butonların çok sıkışıp alt alta iki satır olmasını önlemek için sütun genişliğini artırdık
     col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([1.9, 1.7, 1.7, 1.7, 1.4, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
-    with col_marka:
+    with col_marka: # Eklendi
         filter_marka = st.multiselect("🏷️ Marka", markalar, placeholder="Tümü", key="marka_val")
     with col_grup: 
         filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
@@ -668,7 +683,7 @@ if df_data is not None:
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
-    if filter_marka and marka_col:
+    if filter_marka and marka_col: # Eklendi
         df_data = df_data[df_data[marka_col].astype(str).str.strip().isin(filter_marka)]
         
     if filter_grup and alt_grup_col: 
@@ -697,7 +712,7 @@ if df_data is not None:
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
-    export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"]
+    export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"] # Marka hariç tutuldu
     df_export = df_data[export_cols].copy()
     
     price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
@@ -735,6 +750,7 @@ if df_data is not None:
                 worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn_group:
+        # Eklendi: Buton Hizalama margin-top 25'ten 23'e düşürüldü
         st.markdown("<div style='margin-top: 23px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
