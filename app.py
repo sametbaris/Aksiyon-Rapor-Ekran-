@@ -8,6 +8,7 @@ import io
 import openpyxl
 import gspread
 import uuid
+from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
@@ -65,7 +66,7 @@ LOGOS = {
     "Braun Shop": load_logo_pair("braunshop.png")
 }
 
-# ================= TEMA DEDEKTÖRÜ (GÖLGE DEĞİŞKENLERİ) =================
+# ================= TEMA DEDEKTÖRÜ =================
 components.html(
     """
     <script>
@@ -147,9 +148,6 @@ st.markdown("""
     .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal, ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment { display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important; }
     
-    .table-container { scrollbar-width: thin !important; scrollbar-color: rgba(128, 128, 128, 0) transparent !important; transition: scrollbar-color 0.3s ease-in-out !important; }
-    .table-container:hover { scrollbar-color: rgba(128, 128, 128, 0.15) transparent !important; }
-    
     .custom-table { width: 100%; table-layout: auto; border-collapse: separate !important; border-spacing: 0 !important; font-family: 'Inter', sans-serif; border: none !important; }
     
     .header-logo { height: 26px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease; will-change: transform, filter; }
@@ -164,15 +162,12 @@ st.markdown("""
     .data-pill { padding: 5px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 13px; line-height: 1.2; transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); backface-visibility: hidden; -webkit-font-smoothing: antialiased; will-change: transform; }
     a.data-link:hover .data-pill { transform: translateY(-3px); box-shadow: 0px 5px 12px rgba(0,0,0,0.15); cursor: pointer; }
 
-    /* ========================================================= */
-    /* HOVER THUMBNAIL (GÖRSEL SİHRİ) - STREAMLIT ÇÖKMESİNE KARŞI*/
-    /* ========================================================= */
+    /* THUMBNAIL GÖRSEL CSS */
     .sku-wrapper { position: relative; display: inline-block; cursor: pointer; }
     .sku-thumb { visibility: hidden; position: absolute; left: 110%; top: 50%; transform: translateY(-50%) translateX(10px); opacity: 0; transition: all 0.2s ease-in-out; background-color: var(--dynamic-bg-color, #ffffff); padding: 5px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 999999 !important; border: 1px solid rgba(128,128,128,0.2); pointer-events: none; width: 162px !important; height: 162px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     .sku-thumb img { width: 150px !important; height: 150px !important; min-width: 150px !important; min-height: 150px !important; max-width: 150px !important; object-fit: contain !important; border-radius: 8px; background: white; display: block !important; }
     .sku-thumb::after { content: ''; position: absolute; top: 50%; right: 100%; margin-top: -8px; border-width: 8px; border-style: solid; border-color: transparent var(--dynamic-bg-color, #ffffff) transparent transparent; }
     .sku-wrapper:hover .sku-thumb { visibility: visible; opacity: 1; transform: translateY(-50%) translateX(0px); }
-    /* ========================================================= */
 
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; }
@@ -187,24 +182,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ================= GSPREAD KİMLİK DOĞRULAMA (HATASIZ METOT) =================
+# ================= GSPREAD KİMLİK DOĞRULAMA =================
 @st.cache_resource
 def get_gspread_client():
     try:
-        # Streamlit Secrets okuma
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
             return gspread.service_account_from_dict(creds_dict)
-        # Lokal service_account.json okuma
         elif os.path.exists("service_account.json"):
             return gspread.service_account(filename="service_account.json")
-        else:
-            return None
+        else: return None
     except Exception as e:
         print(f"Auth Error: {e}")
         return None
 
-# ================= ZİYARETÇİ TAKİP MOTORU =================
+# ================= ZİYARETÇİ TAKİP =================
 @st.cache_data(ttl=60)
 def get_online_count():
     client = get_gspread_client()
@@ -242,12 +234,23 @@ def track_user_presence():
         except: pass
     return get_online_count()
 
-# ================= YARDIMCI FONKSİYONLAR =================
+# ================= KUSURSUZ VERİ TEMİZLEYİCİ =================
 def clean_val(val):
-    if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
+    """ .html uzantılarını, linkleri ve tireli metinleri ASLA bozmayan akıllı koruyucu! """
+    if pd.isna(val) or str(val).strip().lower() in ["nan", "none", "null", ""]: return ""
     v = str(val).strip()
-    if v.startswith("http"): return v
-    return v.split('.')[0]
+    
+    # 📌 EĞER İÇİNDE LİNK, .HTML VEYA TİRE VARSA NOKTADAN BÖLME, BOZMA!
+    if v.startswith("http") or ".html" in v.lower() or ("-" in v and not v.replace("-", "").isdigit()): 
+        return v
+        
+    if v.endswith(".0"): 
+        return v[:-2]
+        
+    if "." in v and v.replace(".", "").isdigit():
+        return v.split('.')[0]
+        
+    return v
 
 def parse_price(val):
     if not val or pd.isna(val) or str(val).lower() in ["nan", "none", ""]: return None
@@ -273,29 +276,53 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
-# ================= AKILLI LİNK MOTORU (BİREBİR ESKİSİ GİBİ) =================
+# ================= YEPYENİ AKILLI LİNK MOTORU =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
     if label == "Aksiyon":
-        hidden_link = row.get("Hidden_AK_Link") or row.get("Hidden_Link")
+        # Eski sistemde gelen Hyperlink'ler:
+        hl_ak = row.get("Hidden_AK_Link")
+        if pd.notna(hl_ak) and str(hl_ak).startswith("http"): return str(hl_ak)
+        
+        hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
         
+        # Google Sheets'ten okunan Hyperlink'ler:
         gs_ak = row.get("GS_AK_Link")
         if pd.notna(gs_ak) and str(gs_ak).startswith("http"): return str(gs_ak)
         
-        if val: return f"https://www.akakce.com/arama/?q={val}"
-        if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
-        return None
+        # 📌 MUCİZE 1: Hücrede direkt tam link varsa döndür
+        if val.startswith("http"): return val
         
+        # 📌 MUCİZE 2: Hücrede .html bitişli bir ürün adı (slug) varsa kusursuzca birleştir!
+        if ".html" in val.lower():
+            if val.startswith("/"): return f"https://www.akakce.com{val}"
+            else: return f"https://www.akakce.com/{val}"
+            
+        # 📌 MUCİZE 3: Akakçe ID aramayı desteklemediği için Barkod ile %100 isabetli arama at!
+        if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
+        if val: return f"https://www.akakce.com/arama/?q={val}"
+        return None
+
     if label == "Braun Shop":
-        hl_bs = row.get("Hidden_BS_Link") or row.get("Hidden_Link")
+        hl_bs = row.get("Hidden_BS_Link")
         if pd.notna(hl_bs) and str(hl_bs).startswith("http"): return str(hl_bs)
         
-        gs_link = row.get("GS_BS_Link")
-        if pd.notna(gs_link) and str(gs_link).startswith("http"): return str(gs_link)
+        hidden_link = row.get("Hidden_Link")
+        if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
         
+        gs_bs = row.get("GS_BS_Link")
+        if pd.notna(gs_bs) and str(gs_bs).startswith("http"): return str(gs_bs)
+        
+        if val.startswith("http"): return val
+        
+        # 📌 Braun Shop URL Koruyucu (ID yerine tireli metin varsa)
+        if "-" in val and not val.replace("-", "").isdigit():
+            if val.startswith("/"): return f"https://www.braunshop.com.tr{val}"
+            else: return f"https://www.braunshop.com.tr/{val}"
+            
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
@@ -318,7 +345,7 @@ def build_smart_link(label, raw_id, row):
 def load_and_merge_data():
     client = get_gspread_client()
     if not client:
-        st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı veya Geçersiz!")
+        st.error("🔒 Güvenlik Hatası: Streamlit Secrets'ta JSON Bilgileri Bulunamadı!")
         return None, ""
 
     try:
@@ -342,7 +369,6 @@ def load_and_merge_data():
         else:
             df_fiyat["Barkod_Int"] = ""
             
-        # --- GOOGLE SHEETS FORMÜL OKUYUCU ---
         gsheet_bs_links = {}
         gsheet_ak_links = {}
         try:
@@ -380,7 +406,6 @@ def load_and_merge_data():
         df_fiyat["GS_BS_Link"] = df_fiyat["Barkod_Int"].map(gsheet_bs_links)
         df_fiyat["GS_AK_Link"] = df_fiyat["Barkod_Int"].map(gsheet_ak_links)
         
-        # --- EXCEL MAPPING DOSYASI OKUYUCU ---
         if os.path.exists(MAPPING_FILE):
             df_map = pd.read_excel(MAPPING_FILE, engine='openpyxl', dtype=str)
             df_map.columns = [c.strip() for c in df_map.columns]
@@ -486,7 +511,7 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # --- THUMBNAIL GÖRSEL OLUŞTURMA ---
+            # GÖRSEL THUMBNAIL YERLEŞTİRME
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -501,7 +526,7 @@ def display_styled_table(df, mapping):
         html += '</tr>'
     st.markdown(html + '</tbody></table></div>', unsafe_allow_html=True)
 
-# ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
+# ================= SESSION STATE BAŞLATMA =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
 if "marka_val" not in st.session_state: st.session_state.marka_val = []
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
