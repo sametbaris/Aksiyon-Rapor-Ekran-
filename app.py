@@ -448,6 +448,9 @@ def build_smart_link(label, raw_id, row):
         return None
         
     if val.startswith("http"): return val
+
+        
+    if val.startswith("http"): return val
     
     if label == "Braun Shop":
         gs_link = row.get("GS_BS_Link")
