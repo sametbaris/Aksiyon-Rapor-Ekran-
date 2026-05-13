@@ -152,7 +152,6 @@ st.markdown("""
     .table-container::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0) !important; border-radius: 10px !important; transition: background-color 0.3s ease-in-out !important; }
     .table-container:hover::-webkit-scrollbar-thumb { background-color: rgba(128, 128, 128, 0.15) !important; }
     .table-container::-webkit-scrollbar-thumb:hover { background-color: rgba(128, 128, 128, 0.20) !important; }
-    
     ::-webkit-scrollbar-button, *::-webkit-scrollbar-button, ::-webkit-scrollbar-button:vertical, ::-webkit-scrollbar-button:horizontal,
     ::-webkit-scrollbar-button:start, ::-webkit-scrollbar-button:end, ::-webkit-scrollbar-button:decrement, ::-webkit-scrollbar-button:increment { display: none !important; width: 0px !important; height: 0px !important; size: 0px !important; background: transparent !important; border: none !important; }
     
@@ -170,7 +169,6 @@ st.markdown("""
     .custom-table tbody tr:last-child td { border-bottom: none !important; }
     
     .data-link { text-decoration: none; color: inherit; display: inline-block; width: 100%; }
-    
     .data-pill { padding: 5px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 13px; line-height: 1.2; transform: translateY(0); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); backface-visibility: hidden; -webkit-font-smoothing: antialiased; will-change: transform; }
     a.data-link:hover .data-pill { transform: translateY(-3px); box-shadow: 0px 5px 12px rgba(0,0,0,0.15); cursor: pointer; }
 
@@ -196,10 +194,8 @@ st.markdown("""
     .update-badge { text-align: right; color: var(--header-color); font-size: 11px; background: var(--pill-default-bg); padding: 5px 14px; border-radius: 30px; display: inline-block; float: right; margin-top: 10px; }
     
     /* BUTON STİLLERİ VE ORTALAMA */
-    div[data-testid="stDownloadButton"] button, 
-    div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; }
-    div[data-testid="stDownloadButton"] button p, 
-    div[data-testid="stButton"] button p { display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; }
+    div[data-testid="stDownloadButton"] button, div[data-testid="stButton"] button { width: 100%; border-radius: 20px; font-weight: 600; border: 1px solid #ddd; font-size: 13px; padding: 4px 8px; }
+    div[data-testid="stDownloadButton"] button p, div[data-testid="stButton"] button p { display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.2; margin: 0; height: 100%; }
     
     @media (max-width: 950px) and (orientation: landscape) {
         div[data-testid="stButton"] button p, div[data-testid="stDownloadButton"] button p { font-size: 0px !important; }
@@ -234,16 +230,13 @@ def get_online_count():
         sh = client.open_by_key(SHEET_ID)
         log_sheet = sh.worksheet("Ziyaretci_Log")
         all_logs = log_sheet.get_all_records()
-        
         online_count = 0
         tr_now = datetime.utcnow() + timedelta(hours=3)
         two_minutes_ago = tr_now - timedelta(minutes=2)
-        
         for record in all_logs:
             try:
                 last_seen = datetime.strptime(str(record.get('Son_Gorulme', '')), "%Y-%m-%d %H:%M:%S")
-                if last_seen > two_minutes_ago:
-                    online_count += 1
+                if last_seen > two_minutes_ago: online_count += 1
             except: pass
         return max(1, online_count)
     except: return 1
@@ -252,10 +245,8 @@ def track_user_presence():
     if 'user_id' not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())[:8]
         st.session_state.last_ping = None
-        
     now = datetime.utcnow() + timedelta(hours=3)
     client = get_gspread_client()
-    
     if client and (st.session_state.last_ping is None or (now - st.session_state.last_ping).total_seconds() > 60):
         try:
             sh = client.open_by_key(SHEET_ID)
@@ -266,14 +257,14 @@ def track_user_presence():
             else: log_sheet.append_row([st.session_state.user_id, now_str])
             st.session_state.last_ping = now
         except: pass
-        
     return get_online_count()
 
 # ================= YARDIMCI FONKSİYONLAR =================
 def clean_val(val):
     if pd.isna(val) or str(val).strip().lower() in ["nan", "none", ""]: return ""
     v = str(val).strip()
-    if v.startswith("http"): return v
+    # 📌 LİNK KORUMASI: Eğer bot tam URL veya "/epilasyon" gibi kısmi yol (path) atıyorsa bozma!
+    if v.startswith("http") or "/" in v: return v
     return v.split('.')[0]
 
 def parse_price(val):
@@ -300,21 +291,16 @@ def get_column_mapping(df):
         "Amazon": find_col("Amazon")
     }
 
-# ================= KUSURSUZ LİNK OLUŞTURUCU =================
 def build_smart_link(label, raw_id, row):
     val = clean_val(raw_id)
     barcode = clean_val(row.get("Barkod_Int", ""))
     
-    # 📌 EĞER GELEN VERİ ZATEN BİR LİNK İSE:
-    # Akakçe ve Braun Shop botun artık hücrelere ID yerine direkt tam URL yazıyor.
-    # Bu kontrol, o URL'leri bozulmadan anında geri döndürür. (Senin screenshotlarındaki sorunu bu çözer)
-    if val.startswith("http"): 
-        return val
-
-    # Eğer tam URL değilse, eski sistem gibi ID'den link üretmeye devam et:
     if label == "Aksiyon":
         hidden_link = row.get("Hidden_Link")
         if pd.notna(hidden_link) and str(hidden_link).startswith("http"): return str(hidden_link)
+        # 📌 LİNK KORUMASI: Eğer hücrede direkt URL veya yol varsa onu kullan
+        if val.startswith("http"): return val
+        if val.startswith("/"): return f"https://www.akakce.com{val}"
         if val: return f"https://www.akakce.com/arama/?q={val}"
         if barcode: return f"https://www.akakce.com/arama/?q={barcode}"
         return None
@@ -322,21 +308,24 @@ def build_smart_link(label, raw_id, row):
     if label == "Braun Shop":
         gs_link = row.get("GS_BS_Link")
         if pd.notna(gs_link) and str(gs_link).startswith("http"): return str(gs_link)
+        # 📌 LİNK KORUMASI: Eğer hücrede direkt URL veya yol varsa onu kullan
+        if val.startswith("http"): return val
+        if val.startswith("/"): return f"https://www.braunshop.com.tr{val}"
         if val: return f"https://www.braunshop.com.tr/index.php?route=product/product&product_id={val}"
         if barcode: return f"https://www.braunshop.com.tr/arama?q={barcode}"
         return None
         
+    if val.startswith("http"): return val
+    
     if val != "":
         if label == "Trendyol": return f"https://www.trendyol.com/brand/product-p-{val}"
         if label == "Hepsiburada": return f"https://www.hepsiburada.com/product-p-{val}"
         if label == "Amazon": return f"https://www.amazon.com.tr/dp/{val}"
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/product/_{val}.html"
-        
     if barcode:
         if label == "Media Markt": return f"https://www.mediamarkt.com.tr/tr/search.html?query={barcode}"
         if label == "Teknosa": return f"https://www.teknosa.com/arama/?s={barcode}"
         if label == "Vatan": return f"https://www.vatanbilgisayar.com/arama/{barcode}/"
-        
     return None
 
 # ================= GİZLİ BAĞLANTI & VERİ BİRLEŞTİRME =================
@@ -411,7 +400,7 @@ def load_and_merge_data():
                     if bc_val and b_cell.hyperlink: ext_links[bc_val] = b_cell.hyperlink.target
             df_map["Hidden_Link"] = df_map["Barkod_Int"].map(ext_links)
             
-            # Gorsel_URL ve Marka sütunları eklendi
+            # --- Marka ve Gorsel_URL Eklendi ---
             link_cols = ["Barkod_Int", "TY", "HB", "AMZ", "MM", "TKNS", "VTN", "BS Data ID", "CSS Code", "Hidden_Link", "Gorsel_URL", "Marka"]
             df_map_sub = df_map[[c for c in link_cols if c in df_map.columns]].copy()
             df_final = pd.merge(df_fiyat, df_map_sub, on="Barkod_Int", how="left")
@@ -476,7 +465,7 @@ def display_styled_table(df, mapping):
             map_key = refs.get(label); target_id = row.get(map_key, "")
             url = build_smart_link(label, target_id, row)
             
-            # SİHİRLİ DOKUNUŞ: HTML içine Thumbnail özelliğini ekliyoruz
+            # --- EKLENEN KISIM: Thumbnail Görsel İçin HTML Entegresi ---
             img_url = str(row.get("Gorsel_URL", "")).strip()
             is_sku_col = (label == "Ürün Kodu")
             has_img = is_sku_col and img_url.startswith("http")
@@ -485,6 +474,7 @@ def display_styled_table(df, mapping):
             
             if has_img:
                 inner_content = f'<div class="sku-wrapper">{inner_content}<div class="sku-thumb"><img src="{img_url}" referrerpolicy="no-referrer"></div></div>'
+            # -----------------------------------------------------------
             
             if url and d_val: html += f'<td><a href="{url}" target="_blank" class="data-link">{inner_content}</a></td>'
             else: html += f'<td>{inner_content}</td>'
@@ -493,14 +483,14 @@ def display_styled_table(df, mapping):
 
 # ================= SESSION STATE BAŞLATMA (FİLTRELER İÇİN) =================
 if "search_val" not in st.session_state: st.session_state.search_val = ""
-if "marka_val" not in st.session_state: st.session_state.marka_val = []
+if "marka_val" not in st.session_state: st.session_state.marka_val = [] # Eklendi
 if "grup_val" not in st.session_state: st.session_state.grup_val = []
 if "plat_val" not in st.session_state: st.session_state.plat_val = None
 if "stat_val" not in st.session_state: st.session_state.stat_val = None
 
 def reset_filters():
     st.session_state.search_val = ""
-    st.session_state.marka_val = []
+    st.session_state.marka_val = [] # Eklendi
     st.session_state.grup_val = []
     st.session_state.plat_val = None
     st.session_state.stat_val = None
@@ -530,7 +520,7 @@ with col_update:
 if df_data is not None:
     mapping = get_column_mapping(df_data)
     alt_grup_col = mapping.get("Alt Grup")
-    marka_col = mapping.get("Marka")
+    marka_col = mapping.get("Marka") # Eklendi
     
     if alt_grup_col and alt_grup_col in df_data.columns:
         gruplar = []
@@ -540,7 +530,7 @@ if df_data is not None:
     else: 
         gruplar = []
         
-    # ÖZEL MARKA SIRALAMASI
+    # --- EKLENEN KISIM: Marka Filtresi ve Özel Sıralama ---
     if marka_col and marka_col in df_data.columns:
         markalar_raw = []
         for x in df_data[marka_col].dropna():
@@ -550,12 +540,14 @@ if df_data is not None:
         markalar = sorted(markalar_raw, key=lambda x: preferred_order.index(x) if x in preferred_order else 999)
     else:
         markalar = []
+    # ------------------------------------------------------
 
+    # Butonların çok sıkışıp alt alta iki satır olmasını önlemek için sütun genişliğini artırdık
     col_search, col_marka, col_grup, col_plat, col_stat, col_btn_group = st.columns([1.9, 1.7, 1.7, 1.7, 1.4, 2.0])
     
     with col_search: 
         search = st.text_input("🔍 Ürün Ara...", key="search_val")
-    with col_marka:
+    with col_marka: # Eklendi
         filter_marka = st.multiselect("🏷️ Marka", markalar, placeholder="Tümü", key="marka_val")
     with col_grup: 
         filter_grup = st.multiselect("📂 Alt Grup", gruplar, placeholder="Tümü -Çoklu Seçim-", key="grup_val")
@@ -566,7 +558,7 @@ if df_data is not None:
 
     if search: df_data = df_data[df_data.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
     
-    if filter_marka and marka_col:
+    if filter_marka and marka_col: # Eklendi
         df_data = df_data[df_data[marka_col].astype(str).str.strip().isin(filter_marka)]
         
     if filter_grup and alt_grup_col: 
@@ -595,7 +587,7 @@ if df_data is not None:
     current_time_str = tr_time_now.strftime("%d-%m-%Y_%H-%M")
     excel_filename = f"Aksiyon_Raporu_{current_time_str}.xlsx"
     
-    export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"]
+    export_cols = [real for label, real in mapping.items() if real in df_data.columns and label != "Marka"] # Marka hariç tutuldu
     df_export = df_data[export_cols].copy()
     
     price_platforms = ["Aksiyon", "Braun Shop", "Media Markt", "Teknosa", "Vatan", "Trendyol", "Hepsiburada", "Amazon"]
@@ -633,6 +625,7 @@ if df_data is not None:
                 worksheet.column_dimensions[col_letter].width = 15
                 
     with col_btn_group:
+        # Buton Hizalama
         st.markdown("<div style='margin-top: 23px;'></div>", unsafe_allow_html=True)
         btn_clear, btn_excel = st.columns([1, 1])
         with btn_clear:
