@@ -31,7 +31,7 @@ PLATFORM_LINKS = {
     "Media Markt": "https://www.mediamarkt.com.tr/tr/category/kisisel-bakim-465820.html?brand=ORAL%20B%20OR%20BRAUN%20OR%20REVLON&marketplace=MediaMarkt&sort=availability+asc",
     "Teknosa": "https://www.teknosa.com/kisisel-bakim-c-118?s=%3Arelevance%3Aseller%3Ateknosa%3Abrand%3A2734%3Abrand%3A275%3Abrand%3A2426&text=",
     "Vatan": "https://www.vatanbilgisayar.com/oral-b-braun-revlon/kisisel-bakim-urunleri/?srt=PU",
-    "Amazon": "https://www.amazon.com.tr/s?k=braun&i=beauty&rh=n%3A12466323031%2Cp_89%3ABraun%2Cp_6%3AA1UNQM1SR2CHM&s=price-desc-rank&dc&__mk_tr_TR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&qid=1606138076&rnid=15358539031&ref=sr_st_price-desc-rank",
+    "Amazon": "https://www.amazon.com.tr/s?k=braun&rh=p_6%3AA1UNQM1SR2CHM%2Cp_123%3A232435%257C829410&dc&__mk_tr_TR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=1Q148JNG62WA8&qid=1779283345&rnid=91049075031&sprefix=braun%2Caps%2C168&xpid=ykp5xWOeOLnZ9&ref=sr_pg_1",
     "Hepsiburada": "https://www.hepsiburada.com/magaza/hepsiburada?markalar=braun-revlon&kategori=60001547&tab=allproducts",
     "Trendyol": "https://www.trendyol.com/sr?wb=633%2C888&os=1&mid=968"
 }
